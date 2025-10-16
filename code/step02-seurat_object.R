@@ -7,7 +7,6 @@ plan("multisession", workers = 6)
 data_dir <- "data/seurat_object_list"
 res_dir <- "results/Brain-scRNA-seq"
 fig_dir <- "results/plots_paper"
-family <- "Arial"
 
 dataset_names <- paste0("D", 1:21)
 n_colors_needed <- length(dataset_names)
@@ -21,130 +20,6 @@ color_palette_cluster_seurat <- c(
   "#33A02C"
 )
 names(color_palette_cluster_seurat) <- dataset_names
-
-if (!file.exists(paste0(res_dir, "/merged_seurat_object.rds"))) {
-  seurat_objects <- list()
-
-  data_files <- list.files(
-    data_dir,
-    pattern = ".*_seurat\\.Rdata$",
-    full.names = TRUE
-  )
-
-  print("Found files:")
-  print(data_files)
-
-  all_metadata <- list()
-  all_counts <- list()
-
-  for (file in data_files) {
-    print(paste("Loading:", file))
-    sample_name <- gsub(".*/(.*?)_seurat\\.Rdata$", "\\1", file)
-    load(file)
-
-    if (exists("seurat") && inherits(seurat, "Seurat")) {
-      print(paste("Processing:", sample_name))
-
-      all_counts[[sample_name]] <- GetAssayData(
-        seurat,
-        layer = "counts"
-      )
-
-      meta_data <- seurat@meta.data
-      meta_data$sample_id <- sample_name
-      all_metadata[[sample_name]] <- meta_data
-
-      rm(seurat)
-      gc()
-    }
-  }
-
-  combined_metadata <- do.call(rbind, all_metadata)
-
-  print("Creating merged Seurat object...")
-  merged_seurat <- CreateSeuratObject(counts = all_counts)
-  merged_seurat@meta.data <- combined_metadata
-  rownames(merged_seurat@meta.data) <- Cells(merged_seurat)
-  rm(
-    all_counts,
-    all_metadata,
-    combined_metadata
-  )
-  gc()
-
-  saveRDS(merged_seurat, paste0(res_dir, "/merged_seurat_object.rds"))
-
-  print("Merged Seurat object dimensions:")
-  print(dim(merged_seurat))
-  print("\nSample distribution:")
-  print(table(merged_seurat$sample_id))
-} else {
-  merged_seurat <- readRDS(paste0(res_dir, "/merged_seurat_object.rds"))
-}
-
-if (!file.exists(paste0(res_dir, "/merged_seurat_object_processed.rds"))) {
-  merged_seurat <- NormalizeData(merged_seurat)
-  merged_seurat <- FindVariableFeatures(merged_seurat)
-  merged_seurat <- ScaleData(merged_seurat)
-  merged_seurat <- RunPCA(merged_seurat)
-  merged_seurat <- FindNeighbors(merged_seurat, dims = 1:50)
-  merged_seurat <- FindClusters(merged_seurat, resolution = 2)
-  merged_seurat <- RunUMAP(merged_seurat, dims = 1:30)
-
-  merged_seurat <- RunHarmony(
-    merged_seurat,
-    group.by.vars = "dataset",
-    reduction = "pca",
-    dims.use = 1:30,
-    reduction.save = "harmony"
-  )
-
-  merged_seurat <- RunUMAP(
-    merged_seurat,
-    reduction = "harmony",
-    dims = 1:30,
-    reduction.name = "umap.harmony"
-  )
-
-  merged_seurat <- FindNeighbors(
-    merged_seurat,
-    reduction = "integrated.harmony",
-    dims = 1:30
-  )
-  merged_seurat <- FindNeighbors(
-    merged_seurat,
-    reduction = "harmony",
-    dims = 1:30
-  )
-
-  saveRDS(
-    merged_seurat,
-    paste0(
-      res_dir, "/merged_seurat_object_processed.rds"
-    )
-  )
-
-  pca_raw <- merged_seurat@reductions$pca@cell.embeddings
-  pca_harmony <- merged_seurat@reductions$harmony@cell.embeddings
-  umap_raw <- merged_seurat@reductions$umap@cell.embeddings
-  umap_harmony <- merged_seurat@reductions$umap.harmony@cell.embeddings
-  meta_data <- merged_seurat@meta.data
-  lisi_data <- list(
-    pca_raw,
-    pca_harmony,
-    umap_raw,
-    umap_harmony,
-    meta_data
-  )
-  saveRDS(
-    lisi_data,
-    paste0(res_dir, "/lisi_data.rds")
-  )
-} else {
-  merged_seurat <- readRDS(
-    paste0(res_dir, "/merged_seurat_object_processed.rds")
-  )
-}
 
 merged_seurat_file <- paste0(
   res_dir, "/merged_seurat_object_processed_PFC.rds"
@@ -480,7 +355,7 @@ ggsave(
 
 ggsave(
   paste0(fig_dir, "/fig.S5.png"),
-  all_plots & theme(text = element_text(family = family)),
+  all_plots,
   width = 15,
   height = 6,
   dpi = 600,
