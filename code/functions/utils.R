@@ -1,6 +1,6 @@
 check_dir <- function(dir_path) {
   if (!dir.exists(dir_path)) {
-    inferCSN::log_message(
+    log_message(
       sprintf(
         "Directory %s does not exist. Creating it.", dir_path
       )
