@@ -1,62 +1,37 @@
 #!/bin/bash
 
-# Download script for external data files
-# Usage: ./download_data.sh
+# Enhanced download script for ROSMAP RDS data files
+# Usage: ./download_rosmap_rds-data.sh
 
 set -e
+
+# Source the enhanced download utilities
+source "$(dirname "$0")/download_utils.sh"
 
 # https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/
 
 # Create data directory if it doesn't exist
 DATA_DIR="../../data/BrainData/ROSMAP/processed_data"
-mkdir -p "$DATA_DIR"
 
+log_message "Starting ROSMAP RDS data download..."
 
-echo "Downloading ROSMAP data..."
+# Define download list with expected file sizes (approximate)
+DOWNLOAD_LIST="
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Astrocytes.rds|Astrocytes.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set1.rds|Excitatory_neurons_set1.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set2.rds|Excitatory_neurons_set2.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set3.rds|Excitatory_neurons_set3.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Inhibitory_neurons.rds|Inhibitory_neurons.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/OPCs.rds|OPCs.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Oligodendrocytes.rds|Oligodendrocytes.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Vasculature_cells.rds|Vasculature_cells.rds|0
+https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Immune_cells.rds|Immune_cells.rds|0
+"
 
-if [ ! -f "$DATA_DIR/Astrocytes.rds" ]; then
-  echo "Downloading Astrocytes.rds..."
-  curl -L -o "$DATA_DIR/Astrocytes.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Astrocytes.rds"
-fi
+# Perform batch download
+batch_download "$DOWNLOAD_LIST" "$DATA_DIR" 5
 
-if [ ! -f "$DATA_DIR/Excitatory_neurons_set1.rds" ]; then
-  echo "Downloading Excitatory_neurons_set1.rds..."
-  curl -L -o "$DATA_DIR/Excitatory_neurons_set1.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set1.rds"
-fi
+# Clean up temporary files
+cleanup_temp_files "$DATA_DIR"
 
-if [ ! -f "$DATA_DIR/Excitatory_neurons_set2.rds" ]; then
-  echo "Downloading Excitatory_neurons_set2.rds..."
-  curl -L -o "$DATA_DIR/Excitatory_neurons_set2.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set2.rds"
-fi
-
-if [ ! -f "$DATA_DIR/Excitatory_neurons_set3.rds" ]; then
-  echo "Downloading Excitatory_neurons_set3.rds..."
-  curl -L -o "$DATA_DIR/Excitatory_neurons_set3.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Excitatory_neurons_set3.rds"
-fi
-
-if [ ! -f "$DATA_DIR/Inhibitory_neurons.rds" ]; then
-  echo "Downloading Inhibitory_neurons.rds..."
-  curl -L -o "$DATA_DIR/Inhibitory_neurons.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Inhibitory_neurons.rds"
-fi
-
-if [ ! -f "$DATA_DIR/OPCs.rds" ]; then
-  echo "Downloading OPCs.rds..."
-  curl -L -o "$DATA_DIR/OPCs.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/OPCs.rds"
-fi
-
-if [ ! -f "$DATA_DIR/Oligodendrocytes.rds" ]; then
-  echo "Downloading Oligodendrocytes.rds..."
-  curl -L -o "$DATA_DIR/Oligodendrocytes.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Oligodendrocytes.rds"
-fi
-
-if [ ! -f "$DATA_DIR/Vasculature_cells.rds" ]; then
-  echo "Downloading Vasculature_cells.rds..."
-  curl -L -o "$DATA_DIR/Vasculature_cells.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Vasculature_cells.rds"
-fi
-
-if [ ! -f "$DATA_DIR/Immune_cells.rds" ]; then
-  echo "Downloading Immune_cells.rds..."
-  curl -L -o "$DATA_DIR/Immune_cells.rds" "https://personal.broadinstitute.org/cboix/ad427_data/Data/Processed_data/Immune_cells.rds"
-fi
-
-echo "Download completed successfully!"
+log_success "ROSMAP RDS data download completed!"
