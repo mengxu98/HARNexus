@@ -1,5 +1,5 @@
 source("code/functions/utils.R")
-source("code/functions/packages.R")
+
 
 plot_auc_dimred <- function(
     seurat,

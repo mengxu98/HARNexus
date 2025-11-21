@@ -1,4 +1,3 @@
-source("code/functions/packages.R")
 source("code/functions/utils.R")
 source("code/functions/network_analysis.R")
 

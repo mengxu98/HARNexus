@@ -1,15 +1,3 @@
-check_dir <- function(dir_path) {
-  if (!dir.exists(dir_path)) {
-    log_message(
-      sprintf(
-        "Directory %s does not exist. Creating it.", dir_path
-      )
-    )
-    dir.create(dir_path, recursive = TRUE)
-  }
-  return(dir_path)
-}
-
 calculate_metrics <- function(actual, predicted) {
   pred_vector <- as.vector(predicted)
   mse_val <- Metrics::mse(actual, pred_vector)

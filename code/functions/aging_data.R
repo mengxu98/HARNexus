@@ -1,5 +1,3 @@
-source("code/functions/packages.R")
-
 process_protein_data <- function(
     input_path,
     output_path,

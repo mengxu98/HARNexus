@@ -1,4 +1,3 @@
-source("code/functions/packages.R")
 source("code/functions/aging_model.R")
 
 if (!file.exists("data/ukb/olink_data_imputed_mean_drop30_har_genes.csv")) {

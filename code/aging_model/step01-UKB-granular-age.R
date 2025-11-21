@@ -1,4 +1,3 @@
-source("code/functions/packages.R")
 source("code/functions/utils.R")
 
 data_path <- "data/ukb"

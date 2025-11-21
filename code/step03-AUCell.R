@@ -42,7 +42,7 @@ expr_matrix <- as.matrix(
   GetAssayData(seurat, layer = "data")
 )
 
-great_dataset <- readr::read_csv("data/science_HAR.csv")
+great_dataset <- readr::read_csv("data/genome/science_HAR.csv")
 great_dataset <- great_dataset %>%
   as_tibble() %>%
   separate_rows(associated_genes, sep = ",")

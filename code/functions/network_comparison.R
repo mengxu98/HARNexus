@@ -1,4 +1,3 @@
-
 reorder_data <- function(values) {
   names(values) <- methods_order
   values[methods_order]

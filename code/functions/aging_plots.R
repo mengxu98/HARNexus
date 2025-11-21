@@ -1,5 +1,3 @@
-source("code/functions/packages.R")
-
 create_metric_plots <- function(
     models_results,
     colors_feature_selection = c(

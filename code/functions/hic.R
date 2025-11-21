@@ -1,5 +1,3 @@
-source("code/functions/packages.R")
-
 find_full_coverage_threshold <- function(
     weight_table,
     method_name) {

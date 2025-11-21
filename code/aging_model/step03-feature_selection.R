@@ -1,5 +1,5 @@
 source("code/functions/utils.R")
-source("code/functions/packages.R")
+
 source("code/functions/aging_data.R")
 source("code/functions/aging_model.R")
 source("code/functions/aging_plots.R")
