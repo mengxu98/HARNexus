@@ -172,7 +172,7 @@ ggsave(
   file.path(result_dir, "tf_gain_bias_barplot.pdf"),
   p_bias,
   width = 8,
-  height = 12
+  height = 20
 )
 
 

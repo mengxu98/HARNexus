@@ -77,10 +77,11 @@ fi
 
 
 # GSE199762
-# paper: https://doi.org/10.1126/sciadv.adg3754
-# pmid: https://www.ncbi.nlm.nih.gov/pubmed/37824614
+# paper: https://doi.org/10.1038/s41586-023-06981-x
+# pmid: https://www.ncbi.nlm.nih.gov/pubmed/38122823
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE199762
-# code:
+# dbGaP, accession: https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs003509.v1.p1
+# code: https://github.com/massisnascimento/ECstream
 if should_process "../../data/BrainData/processed/GSE199762/GSE199762_processed.rds"; then
   log_message "Processing GSE199762 data..."
   Rscript $code_dir/GSE199762.R
@@ -90,11 +91,16 @@ else
 fi
 
 
-# GSE204683
+# GSE204683 (Multiome: snRNA-seq + snATAC-seq (GSE204684))
 # paper: https://doi.org/10.1126/sciadv.adg3754
 # pmid: https://www.ncbi.nlm.nih.gov/pubmed/37824614
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE204683
-# code:
+# ATAC-seq: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE204684
+# CELLxGENE (RRID: SCR_021059) data (h5ad):
+# https://cellxgene.cziscience.com/collections/ceb895f4-ff9f-403a-b7c3-187a9657ac2c
+# code: https://doi.org/10.5281/zenodo.7703253
+bash $code_dir/download_GSE204683.sh
+
 if should_process "../../data/BrainData/processed/GSE204683/GSE204683_processed.rds"; then
   log_message "Processing GSE204683 data..."
   Rscript $code_dir/GSE204683.R
@@ -158,11 +164,12 @@ else
 fi
 
 
-# GSE97942
+# GSE97942 (GSE97887 + GSE97930)
 # paper: https://doi.org/10.1126/sciadv.adg3754
-# pmid: https://www.ncbi.nlm.nih.gov/pubmed/37824614
-# data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97942(contain GSE97930)
-# https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97930
+# pmid: https://www.ncbi.nlm.nih.gov/pubmed/29227469
+# data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97942
+# GSE97887 (scTHS-seq): https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97887
+# GSE97930 (snDrop-seq): https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97930
 # code:
 if should_process "../../data/BrainData/processed/GSE97942/GSE97942_processed.rds"; then
   log_message "Processing GSE97942 data..."
