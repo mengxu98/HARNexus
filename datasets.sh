@@ -409,6 +409,20 @@ else
   log_message "ROSMAP data already processed!"
 fi
 
+# GSE296073 (contains GSE274829 from PMID: 40770097)
+# description for GSE274829:
+# Human embryonic stem cells-induced microglia (iMG) were transplanted to 4-week-old MGE organoids.
+# We conducted scRNAseq to investigate the transcriptomics of 6-week-old MGE organoids with and without iMG.
+# We also used Fluorescence-activated cell sorting (FACS) to enrich GFP-labelled iMG and condcuted scRNAseq.
+# journal: Nature
+# date: 2025
+# paper: https://doi.org/10.1038/s41586-025-09362-8
+# pmid: https://www.ncbi.nlm.nih.gov/pubmed/40770097
+# data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE296073
+# code:https://github.com/DIANKUNYU/R-script-used-for-Yu-2025
+# https://github.com/codycollier/mglia-nat25
+bash $code_dir/download_GSE296073.sh
+
 
 # datasets integration
 if should_process "../../data/BrainData/processed/integration/integration_list.rds"; then
