@@ -5,7 +5,7 @@ source("code/functions/prepare_env.R")
 
 data_dir <- "../../data/BrainData/integration/"
 
-objects_file <- file.path(data_dir, "objects.rds")
+objects_file <- file.path(data_dir, "objects_raw.rds")
 if (!file.exists(objects_file)) {
   log_message("Loading objects list...")
   objects_list <- readRDS(file.path(data_dir, "objects_list.rds"))

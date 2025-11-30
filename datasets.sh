@@ -164,8 +164,10 @@ else
 fi
 
 
-# GSE97942 (GSE97887 + GSE97930)
-# paper: https://doi.org/10.1126/sciadv.adg3754
+# GSE97942 (contains GSE97887 + GSE97930)
+# journal: Nature Biotechnology
+# date: 2018
+# paper: https://doi.org/10.1038/nbt.4038
 # pmid: https://www.ncbi.nlm.nih.gov/pubmed/29227469
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97942
 # GSE97887 (scTHS-seq): https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97887

@@ -3,22 +3,22 @@ gc()
 
 res_dir <- "../../data/BrainData/integration/"
 
-objects_file <- file.path(
-  res_dir, "objects_processed_integrated_joined.rds"
+objects_file1 <- file.path(
+  res_dir, "objects_processed_integrated.rds"
 )
-if (!file.exists(objects_file)) {
+if (!file.exists(objects_file1)) {
   library(Seurat)
-  library(patchwork)
   library(future)
 
-  options(future.globals.maxSize = Inf)
-  plan(multicore, workers = 64)
+  options(future.globals.maxSize = 8 * 1024^3)
+  plan(sequential)
+
   message("Number of parallel workers: ", nbrOfWorkers())
 
   message("Loading objects")
   objects <- readRDS(file.path(res_dir, "objects_processed.rds"))
 
-  message("Running PCA")
+  message("Running preprocessing")
   dims <- 1:50
   n_features <- 3000
 
@@ -33,18 +33,15 @@ if (!file.exists(objects_file)) {
     features = VariableFeatures(objects)
   )
 
-  message("Finding neighbors")
   objects <- FindNeighbors(
     objects,
     dims = dims,
     reduction = "pca"
   )
-  message("Finding clusters")
   objects <- FindClusters(
     objects,
     resolution = 1
   )
-  message("Running UMAP")
   objects <- RunUMAP(
     objects,
     dims = dims,
@@ -100,6 +97,11 @@ if (!file.exists(objects_file)) {
     # umap_harmony,
     meta_data
   )
+  names(lisi_data) <- c(
+    "pca_raw", "pca_integrated",
+    "umap_raw", "umap_integrated",
+    "meta_data"
+  )
   saveRDS(
     lisi_data,
     file.path(res_dir, "lisi_data.rds")
@@ -108,8 +110,16 @@ if (!file.exists(objects_file)) {
   message("Saving objects")
   saveRDS(
     objects,
-    file.path(res_dir, "objects_processed_integrated.rds")
+    objects_file1
   )
+}
+
+objects_file2 <- file.path(
+  res_dir, "objects_processed_integrated_joined.rds"
+)
+if (!file.exists(objects_file2)) {
+  message("Loading objects")
+  objects <- readRDS(objects_file1)
 
   message("Joining layers")
   objects <- JoinLayers(objects)
@@ -124,23 +134,12 @@ if (!file.exists(objects_file)) {
     features = VariableFeatures(objects)
   )
   objects <- FindNeighbors(objects, dims = dims)
-  objects <- FindClusters(objects, resolution = 1)
+  objects <- FindClusters(objects, resolution = 2)
   objects <- RunUMAP(objects, dims = dims)
-  # objects <- RunHarmony(
-  #   objects,
-  #   group.by.vars = c("Dataset", "Sample"),
-  #   reduction = "pca",
-  #   dims.use = dims,
-  #   reduction.save = "harmony"
-  # )
-  # objects <- RunUMAP(
-  #   objects,
-  #   reduction = "harmony",
-  #   dims = dims,
-  #   reduction.name = "umap.harmony"
-  # )
+
+  message("Saving objects")
   saveRDS(
     objects,
-    objects_file
+    objects_file2
   )
 }

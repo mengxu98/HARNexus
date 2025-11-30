@@ -1,4 +1,4 @@
-options(future.globals.maxSize = 1000 * 1024^2)
+options(future.globals.maxSize = 8 * 1024^2)
 library(future)
 plan("multisession", workers = 6)
 
@@ -36,71 +36,6 @@ if (!file.exists(merged_seurat_file)) {
     merged_seurat_file
   )
 }
-
-if (!file.exists(paste0(res_dir, "/lisi_results.rds"))) {
-  lisi_data <- readRDS(paste0(res_dir, "/lisi_data.rds"))
-  before_lisi <- compute_lisi(
-    X = lisi_data[[3]],
-    meta_data = lisi_data[[6]],
-    label_colnames = "dataset"
-  )
-  after_lisi <- compute_lisi(
-    X = lisi_data[[4]],
-    meta_data = lisi_data[[6]],
-    label_colnames = "dataset"
-  )
-  lisi_results <- cbind(
-    before_lisi,
-    after_lisi
-  )
-  names(lisi_results) <- c("Raw", "Harmony")
-
-  saveRDS(lisi_results, paste0(res_dir, "/lisi_results.rds"))
-} else {
-  lisi_results <- readRDS(paste0(res_dir, "/lisi_results.rds"))
-}
-
-lisi_long <- tidyr::gather(
-  lisi_results,
-  key = "Method",
-  value = "LISI"
-)
-lisi_long$Method <- factor(lisi_long$Method, levels = c("Raw", "Harmony"))
-
-lisi_boxplot <- ggplot(lisi_long, aes(x = Method, y = LISI)) +
-  geom_boxplot(
-    aes(fill = Method),
-    alpha = 0.7,
-    width = 0.5,
-    outlier.shape = NA
-  ) +
-  scale_fill_manual(
-    values = c("Raw" = "#E41A1C", "Harmony" = "#377EB8")
-  ) +
-  labs(
-    x = "",
-    y = "LISI"
-  ) +
-  stat_compare_means(
-    method = "wilcox.test",
-    comparisons = list(c("Raw", "Harmony")),
-    label = "p.signif"
-  ) +
-  theme_bw() +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    plot.title = element_text(hjust = 0.5),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12)
-  )
-ggsave(
-  paste0(fig_dir, "/lisi_boxplot.pdf"),
-  lisi_boxplot,
-  width = 5,
-  height = 5
-)
-
 
 metadata <- merged_seurat@meta.data
 

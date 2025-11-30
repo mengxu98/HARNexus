@@ -7,27 +7,7 @@ data_dir <- "../../data/BrainData/integration/"
 
 objects_file <- file.path(data_dir, "objects_processed.rds")
 if (!file.exists(objects_file)) {
-  objects <- readRDS(file.path(data_dir, "objects.rds"))
-
-  p1 <- VlnPlot(
-    objects,
-    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
-    group.by = "Dataset",
-    pt.size = 0, ncol = 3
-  )
-  ggsave(
-    filename = file.path(data_dir, "vlnplot_unintegrated.pdf"),
-    plot = p1,
-    width = 18,
-    height = 5
-  )
-  objects <- subset(
-    objects,
-    subset = nFeature_RNA > 1000 &
-      nFeature_RNA < 10000 &
-      percent.mt < 15
-  )
-
+  objects <- readRDS(file.path(data_dir, "objects_raw.rds"))
   remove_patterns <- c(
     "^ERCC", "^RPLP", "^RPSL", "^MT-", "^mt-",
     "^LOC", "^LINC", "^RP[0-9]", "^AC[0-9]", "MALAT1", "^HB[^(P)]",
@@ -41,7 +21,10 @@ if (!file.exists(objects_file)) {
     ignore.case = TRUE
   )
   objects <- objects[keep, ]
-
   saveRDS(objects, objects_file)
+
+  object_sub <- subset(objects, subset = Dataset == "GSE97942")
+  saveRDS(object_sub, file.path(data_dir, "GSE97942_processed.rds"))
+
   log_message("Objects saved to {.file {objects_file}}")
 }
