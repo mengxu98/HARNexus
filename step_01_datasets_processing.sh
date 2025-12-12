@@ -20,6 +20,17 @@ should_process() {
 }
 
 
+# BCAtlas
+# title: A brain cell atlas integrating single-cell transcriptomes across human brain regions
+# paper: https://doi.org/10.1038/s41591-024-03150-z
+# data: https://www.braincellatlas.org/dataSet
+log_message "Processing BCAtlas data..."
+Rscript $code_dir/BCAtlas.R
+log_success "BCAtlas data processed successfully!"
+
+# BICCN
+# data: https://brainscope.gersteinlab.org/integrative_files.html
+
 # GSE103723
 # paper: https://doi.org/10.1126/sciadv.adg3754
 # pmid: https://www.ncbi.nlm.nih.gov/pubmed/37824614
@@ -91,7 +102,7 @@ else
 fi
 
 
-# GSE204683 (Multiome: snRNA-seq + snATAC-seq (GSE204684))
+# GSE204683 (multiome: snRNA-seq + snATAC-seq (GSE204684))
 # paper: https://doi.org/10.1126/sciadv.adg3754
 # pmid: https://www.ncbi.nlm.nih.gov/pubmed/37824614
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE204683
@@ -334,7 +345,7 @@ fi
 #   "../../data/BrainData/raw/GSE207334/PFC_snRNAseq_liftover.rds"
 # )
 
-# GSE207334 (Multiome: snRNA-seq + snATAC-seq)
+# GSE207334 (multiome: snRNA-seq + snATAC-seq)
 if should_process "../../data/BrainData/processed/GSE207334/GSE207334_processed.rds"; then
   log_message "Processing GSE207334 data..."
   Rscript $code_dir/GSE207334.R
@@ -353,11 +364,12 @@ else
 fi
 
 
-# GSE235493 (Multiome: snRNA-seq + snATAC-seq, Macaque)
+# GSE235493 (multiome: snRNA-seq + snATAC-seq, Macaque)
 # paper: https://doi.org/10.1016/j.neuron.2025.04.025
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE235493
 # code: https://doi.org/10.5281/zenodo.15243470
 # note: not found human data in GSE235493
+
 
 # HYPOMAP
 # paper: https://doi.org/10.1038/s41586-024-08504-8
@@ -368,6 +380,14 @@ fi
 #   https://github.com/mrcepid-rap
 # data: https://cellxgene.cziscience.com/collections/d0941303-7ce3-4422-9249-cf31eb98c480
 # data(spatial): https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE278848
+if should_process "../../data/BrainData/processed/HYPOMAP/HYPOMAP_processed.rds"; then
+  log_message "Processing HYPOMAP data..."
+  Rscript $code_dir/HYPOMAP.R
+  log_success "HYPOMAP data processed successfully!"
+else
+  log_message "HYPOMAP data already processed!"
+fi
+
 
 # SomaMut
 # papaer: https://doi.org/10.1038/s41586-025-09435-8
@@ -381,7 +401,8 @@ else
   log_message "SomaMut data already processed!"
 fi
 
-# PRJCA015229 (Multiome: snRNA-seq + snATAC-seq, Human + Macaque)
+
+# PRJCA015229 (multiome: snRNA-seq + snATAC-seq, Human + Macaque)
 # paper: https://doi.org/10.1016/j.xgen.2024.100703
 # code: https://github.com/KIZ-SubLab/ACC-sn-Multiomes
 # data: https://ngdc.cncb.ac.cn/bioproject/browse/PRJCA015229
@@ -393,11 +414,11 @@ else
   log_message "PRJCA015229 data already processed!"
 fi
 
+
 # ROSMAP (Religious Order Study (ROS) or the Rush Memory and Aging Project (MAP))
 # paper: https://doi.org/10.1016/j.cell.2023.08.039
 # code: https://github.com/mathyslab7/ROSMAP_snRNAseq_PFC/
 # data: https://compbio.mit.edu/ad_aging_brain/
-
 bash $code_dir/download_rosmap_processed_data.sh
 bash $code_dir/download_rosmap_ucsc_snRNAseq.sh
 bash $code_dir/download_rosmap_ucsc_snRNAseqsnATACseq.sh
@@ -411,26 +432,44 @@ else
   log_message "ROSMAP data already processed!"
 fi
 
+
 # GSE296073 (contains GSE274829 from PMID: 40770097)
-# description for GSE274829:
+# description for GSE274829 (organoids):
 # Human embryonic stem cells-induced microglia (iMG) were transplanted to 4-week-old MGE organoids.
 # We conducted scRNAseq to investigate the transcriptomics of 6-week-old MGE organoids with and without iMG.
 # We also used Fluorescence-activated cell sorting (FACS) to enrich GFP-labelled iMG and condcuted scRNAseq.
+# title: Microglia integration into organoids recapitulates human microglial biology
 # journal: Nature
 # date: 2025
 # paper: https://doi.org/10.1038/s41586-025-09362-8
 # pmid: https://www.ncbi.nlm.nih.gov/pubmed/40770097
 # data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE296073
+# Seurat Objects of snRNAseq data of postmortem embryonic and perinatal human sampels 
+# (h_pre_peri_DY for all, INS for interneurons) as well as MGE organoids(organoid6w_DY),
+# induced microglia isolated from MGE organoids (img) in manuscript 
+# Zenodo: https://zenodo.org/records/15299853
 # code:https://github.com/DIANKUNYU/R-script-used-for-Yu-2025
 # https://github.com/codycollier/mglia-nat25
 bash $code_dir/download_GSE296073.sh
-
-
-# datasets integration
-if should_process "../../data/BrainData/processed/integration/integration_list.rds"; then
-  log_message "Processing datasets integration..."
-  Rscript $code_dir/datasets_integration.R
-  log_success "Datasets integration processed successfully!"
+if should_process "../../data/BrainData/processed/GSE296073/GSE296073_processed.rds"; then
+  log_message "Processing GSE296073 data..."
+  Rscript $code_dir/GSE296073.R
+  log_success "GSE296073 data processed successfully!"
 else
-  log_message "Datasets integration already processed!"
+  log_message "GSE296073 data already processed!"
+fi
+
+
+# GSE261983 (multiome: snRNA-seq + snATAC-seq, a part of PsychENCODE project and brainSCOPE (https://brainscope.gersteinlab.org/))
+# title: Single-cell genomics and regulatory networks for 388 human brains
+# paper: https://doi.org/10.1126/science.adi5199
+# pmid: https://pubmed.ncbi.nlm.nih.gov/38781369/
+# data: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE261983
+# code:
+if should_process "../../data/BrainData/processed/GSE261983/GSE261983_processed.rds"; then
+  log_message "Processing GSE261983 data..."
+  Rscript $code_dir/GSE261983.R
+  log_success "GSE261983 data processed successfully!"
+else
+  log_message "GSE261983 data already processed!"
 fi

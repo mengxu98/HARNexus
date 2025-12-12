@@ -36,47 +36,12 @@ metadata <- merge(
 )
 rownames(metadata) <- metadata$Cells
 
-mapping <- c(
-  "L2-3 IT" = "Excitatory neurons",
-  "L3-5 IT-1" = "Excitatory neurons",
-  "L3-5 IT-2" = "Excitatory neurons",
-  "L3-5 IT-3" = "Excitatory neurons",
-  "L5 ET" = "Excitatory neurons",
-  "L5-6 NP" = "Excitatory neurons",
-  "L6 CT" = "Excitatory neurons",
-  "L6 IT-1" = "Excitatory neurons",
-  "L6 IT-2" = "Excitatory neurons",
-  "L6B" = "Excitatory neurons",
-  "KCNG1" = "Excitatory neurons",
-  "RB" = "Excitatory neurons",
-  "ADARB2" = "Inhibitory neurons",
-  "LAMP5 LHX6" = "Inhibitory neurons",
-  "LAMP5 RELN" = "Inhibitory neurons",
-  "PVALB" = "Inhibitory neurons",
-  "PVALB ChC" = "Inhibitory neurons",
-  "SST" = "Inhibitory neurons",
-  "SST HGF" = "Inhibitory neurons",
-  "SST NPY" = "Inhibitory neurons",
-  "VIP" = "Inhibitory neurons",
-  "Astro" = "Astrocytes",
-  "Oligo" = "Oligodendrocytes",
-  "OPC" = "Oligodendrocyte progenitor cells",
-  "Micro" = "Microglia",
-  "Immune" = "Immune cells",
-  "Endo" = "Endothelial cells",
-  "PC" = "Pericytes",
-  "SMC" = "Smooth muscle cells",
-  "VLMC" = "Vascular and leptomeningeal cells"
-)
-metadata$CellType <- mapping[metadata$subclass]
-metadata <- metadata[metadata$CellType != "Immune cells", ]
-
+metadata$CellType_raw <- metadata$subclass
 metadata$Brain_Region <- "Dorsolateral prefrontal cortex"
 metadata$Region <- "Dorsolateral prefrontal cortex"
-
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 

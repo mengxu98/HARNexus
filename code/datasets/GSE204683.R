@@ -98,28 +98,10 @@ metadata$Technology <- "10X Genomics"
 metadata$Sequence <- "snRNA-seq"
 metadata$Sample <- metadata$Donor.ID
 metadata$Sample_ID <- metadata$Donor_ID_numeric
-
-mapping <- c(
-  "Astrocytes"       = "Astrocytes",
-  "EN"               = "Excitatory neurons",
-  "EN-fetal-early"   = "Newborn excitatory neurons",
-  "EN-fetal-late"    = "Newborn excitatory neurons",
-  "Endothelial"      = "Endothelial cells",
-  "IN-CGE"           = "Inhibitory neurons",
-  "IN-fetal"         = "Newborn inhibitory neurons",
-  "IN-MGE"           = "Inhibitory neurons",
-  "IPC"              = "Intermediate progenitor cells",
-  "Microglia"        = "Microglia",
-  "Oligodendrocytes" = "Oligodendrocytes",
-  "OPC"              = "Oligodendrocyte progenitor cells",
-  "Pericytes"        = "Pericytes",
-  "RG"               = "Radial glia",
-  "VSMC"             = "Vascular smooth muscle cells"
-)
-metadata$CellType <- mapping[metadata$Cell.type]
+metadata$CellType_raw <- metadata$Cell.type
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[common_cells, column_order]
 counts <- counts[, common_cells]

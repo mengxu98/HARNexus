@@ -17,17 +17,7 @@ metadata$Technology <- "STRT-seq"
 metadata$Sequence <- "scRNA-seq"
 metadata$Sample <- metadata$sample
 metadata$Sample_ID <- metadata$cell_ID
-
-mapping <- c(
-  "Astrocytes"          = "Astrocytes",
-  "GABAergic neurons"   = "Inhibitory neurons",
-  "Microglia"           = "Microglia",
-  "Neurons"             = "Neurons",
-  "OPC"                 = "Oligodendrocyte progenitor cells",
-  "Stem cells"          = "Neural stem cells"
-)
-
-metadata$CellType <- mapping[metadata$cell_types]
+metadata$CellType_raw <- metadata$cell_types
 metadata$Brain_Region <- metadata$region
 metadata$Region <- metadata$subregion
 metadata$Age <- metadata$donor_age
@@ -38,7 +28,7 @@ metadata$Sex <- ifelse(metadata$Sex == "F", "Female", "Male")
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

@@ -71,49 +71,14 @@ metadata$Sequence <- "snRNA-seq"
 metadata$Sample <- metadata$orig.ident
 metadata$Sample <- gsub("D7_", "", metadata$Sample)
 metadata$Sample_ID <- metadata$Sample
-mapping <- c(
-  "Ast" = "Astrocytes",
-  "End" = "Endothelial cells",
-  "Ex1" = "Excitatory neurons",
-  "Ex2" = "Excitatory neurons",
-  "Ex3a" = "Excitatory neurons",
-  "Ex3b" = "Excitatory neurons",
-  "Ex3c" = "Excitatory neurons",
-  "Ex3d" = "Excitatory neurons",
-  "Ex3e" = "Excitatory neurons",
-  "Ex4" = "Excitatory neurons",
-  "Ex5a" = "Excitatory neurons",
-  "Ex5b" = "Excitatory neurons",
-  "Ex6a" = "Excitatory neurons",
-  "Ex6b" = "Excitatory neurons",
-  "Ex8" = "Excitatory neurons",
-  "Gran" = "Granule cells",
-  "In1a" = "Inhibitory neurons",
-  "In1b" = "Inhibitory neurons",
-  "In1c" = "Inhibitory neurons",
-  "In2" = "Inhibitory neurons",
-  "In3" = "Inhibitory neurons",
-  "In4a" = "Inhibitory neurons",
-  "In4b" = "Inhibitory neurons",
-  "In6a" = "Inhibitory neurons",
-  "In6b" = "Inhibitory neurons",
-  "In7" = "Inhibitory neurons",
-  "In8" = "Inhibitory neurons",
-  "Mic" = "Microglia",
-  "Oli" = "Oligodendrocytes",
-  "OPC" = "Oligodendrocyte progenitor cells",
-  "Per" = "Pericytes",
-  "Purk1" = "Purkinje cells",
-  "Purk2" = "Purkinje cells"
-)
-metadata$CellType <- mapping[metadata$priCluster]
+metadata$CellType_raw <- metadata$priCluster
 metadata$Brain_Region <- metadata$Area
 metadata$Region <- metadata$Area
 metadata$Age <- gsub(" years", "", metadata$Age)
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

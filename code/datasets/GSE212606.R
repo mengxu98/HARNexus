@@ -49,27 +49,11 @@ metadata$Technology <- "EasySci-RNA"
 metadata$Sequence <- "scRNA-seq"
 metadata$Sample <- metadata$Individual_ID
 metadata$Sample_ID <- metadata$Individual_ID
-
-mapping <- c(
-  "Astrocytes"                     = "Astrocytes",
-  "Cortical projection neurons 1"  = "Excitatory neurons",
-  "Cortical projection neurons 2"  = "Excitatory neurons",
-  "Cortical projection neurons 3"  = "Excitatory neurons",
-  "Endothelial cells"              = "Endothelial cells",
-  "Ependymal cells"                = "Ependymal cells",
-  "Interneurons 1"                 = "Inhibitory neurons",
-  "Interneurons 2"                 = "Inhibitory neurons",
-  "Microglia"                      = "Microglia",
-  "Oligodendrocyte progenitor cells" = "Oligodendrocyte progenitor cells",
-  "Oligodendrocytes"               = "Oligodendrocytes",
-  "Vascular leptomeningeal cells"  = "Vascular and leptomeningeal cells"
-)
-
-metadata$CellType <- mapping[metadata$Cell_type]
+metadata$CellType_raw <- metadata$Cell_type
 metadata$Brain_Region <- metadata$Region
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

@@ -168,18 +168,7 @@ metadata$Dataset <- "PRJCA015229"
 metadata$Technology <- "10X Genomics"
 metadata$Sequence <- "snRNA-seq"
 metadata$Sample_ID <- metadata$Sample
-mapping <- c(
-  ASC = "Astrocytes",
-  END = "Endothelial cells",
-  EX  = "Excitatory neurons",
-  IN  = "Inhibitory neurons",
-  MG  = "Microglia",
-  ODC = "Oligodendrocytes",
-  OPC = "Oligodendrocyte progenitor cells"
-)
-metadata$CellType_full <- mapping[metadata$BigCellType]
-metadata$CellType <- metadata$CellType_full
-
+metadata$CellType_raw <- metadata$BigCellType
 metadata$Brain_Region <- "Anterior cingulate cortex "
 metadata$Region <- "Anterior cingulate cortex "
 
@@ -204,7 +193,7 @@ rownames(metadata) <- metadata$Cells
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

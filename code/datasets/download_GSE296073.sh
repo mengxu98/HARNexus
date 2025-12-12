@@ -19,7 +19,12 @@ log_message "Starting GSE296073 data download..."
 # Define download list
 DOWNLOAD_LIST="
 https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE296073&format=file|GSE296073_RAW.tar|0
+https://zenodo.org/records/15299853/files/h_pre_peri_DY.rds?download=1|h_pre_peri_DY.rds|0
+https://zenodo.org/records/15299853/files/INS.rds?download=1|INS.rds|0
 "
+
+# https://zenodo.org/records/15299853/files/organoid6w_DY.rds?download=1
+# https://zenodo.org/records/15299853/files/img.rds?download=1
 
 # Perform batch download
 batch_download "$DOWNLOAD_LIST" "$DATA_DIR" 5

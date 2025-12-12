@@ -92,21 +92,7 @@ metadata$Sample <- rownames(metadata)
 metadata$Sample_ID <- rownames(metadata)
 metadata$Brain_Region <- metadata$Region
 metadata$Region <- metadata$Region
-
-cluster_full <- c(
-  "Astro" = "Astrocytes",
-  "Endo"  = "Endothelial cells",
-  "ExN"   = "Excitatory neurons",
-  "InN"   = "Inhibitory neurons",
-  "Micro" = "Microglia",
-  "NPC"   = "Neural progenitor cells",
-  "Olig"  = "Oligodendrocytes",
-  "OPC"   = "Oligodendrocyte progenitor cells",
-  "Perc"  = "Vascular mural cells"
-)
-
-metadata$cluster_fullname <- cluster_full[metadata$cluster]
-metadata$CellType <- metadata$cluster_fullname
+metadata$CellType_raw <- metadata$cluster
 region_full <- c(
   "CTX" = "Cerebral cortex",
   "ITC" = "Intra-temporal cortex"
@@ -119,7 +105,7 @@ metadata$Region <- metadata$Region_fullname
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

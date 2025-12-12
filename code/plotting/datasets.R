@@ -1,9 +1,59 @@
+rm(list = ls())
+gc()
+
 source("code/functions/prepare_env.R")
 
 data_dir <- "../../data/BrainData/integration/"
 fig_dir <- check_dir("results/figures/datasets")
 
-metadata <- readRDS(file.path(data_dir, "metadata_filtered.rds"))
+objects <- readRDS(file.path(data_dir, "objects_processed_integrated.rds"))
+p1 <- DimPlot(
+  objects,
+  reduction = "umap.unintegrated",
+  group.by = "Dataset",
+  label = TRUE,
+  label.size = 8,
+  repel = TRUE,
+  pt.size = 0.5
+)
+p2 <- DimPlot(
+  objects,
+  reduction = "umap.unintegrated",
+  group.by = "CellType",
+  label = TRUE,
+  label.size = 8,
+  repel = TRUE,
+  pt.size = 0.5
+)
+p3 <- DimPlot(
+  objects,
+  reduction = "umap.rpca",
+  group.by = "Dataset",
+  label = TRUE,
+  label.size = 8,
+  repel = TRUE,
+  pt.size = 0.5
+)
+p4 <- DimPlot(
+  objects,
+  reduction = "umap.rpca",
+  group.by = "CellType",
+  label = TRUE,
+  label.size = 8,
+  repel = TRUE,
+  pt.size = 0.5
+)
+
+p <- p1 + p2 + p3 + p4
+ggsave(
+  file.path(fig_dir, "umap_integrated_cell_type.pdf"),
+  p,
+  width = 20,
+  height = 20
+)
+
+
+metadata <- objects@meta.data
 p1 <- StatPlot(
   metadata,
   stat.by = "Dataset",

@@ -21,19 +21,7 @@ metadata$Technology <- "10X Genomics"
 metadata$Sequence <- "snRNA-seq"
 metadata$Sample <- metadata$case
 metadata$Sample_ID <- metadata$case
-mapping <- c(
-  "Excitotary_Neurons"   = "Excitatory neurons",
-  "Inhibitory_Neuron"    = "Inhibitory neurons",
-  "Microglia"            = "Microglia",
-  "AST"                  = "Astrocytes",
-  "Oligodendrocytes"     = "Oligodendrocytes",
-  "OPC"                  = "Oligodendrocyte progenitor cells",
-  "Endothelial"          = "Endothelial cells"
-)
-
-metadata$new_clusters3_fixed <- mapping[metadata$new_clusters3]
-
-metadata$CellType <- metadata$new_clusters3_fixed
+metadata$CellType_raw <- metadata$new_clusters3
 metadata$Brain_Region <- "Prefrontal cortex"
 metadata$Region <- "Prefrontal cortex"
 metadata$Age <- metadata$age
@@ -42,7 +30,7 @@ metadata$Sex <- ifelse(metadata$Sex == "female", "Female", "Male")
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

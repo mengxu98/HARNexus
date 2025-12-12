@@ -128,21 +128,7 @@ metadata$Technology <- "10X Genomics"
 metadata$Sequence <- "snRNA-seq"
 metadata$Sample <- metadata$donor
 metadata$Sample_ID <- metadata$orig.ident
-
-mapping <- c(
-  "Astrocytes"               = "Astrocytes",
-  "Cortical Interneurons"    = "Inhibitory neurons",
-  "Dividing Cells"           = "Proliferating cells",
-  "Ependymal Cells"          = "Ependymal cells",
-  "Excitatory Neurons"       = "Excitatory neurons",
-  "Microglia"                = "Microglia",
-  "Non-cortical Interneurons"= "Inhibitory neurons",
-  "Oligodendrocytes"         = "Oligodendrocytes",
-  "OPCs"                     = "Oligodendrocyte progenitor cells",
-  "Progenitor Cells"         = "Neural progenitor cells",
-  "Vascular Cells"           = "Vascular cells"
-)
-metadata$CellType <- mapping[metadata$all.exp_type]
+metadata$CellType_raw <- metadata$all.exp_type
 metadata$Brain_Region <- metadata$sample
 metadata$Region <- metadata$region
 
@@ -164,7 +150,7 @@ metadata$Sex <- ifelse(metadata$Sex == "female", "Female", "Male")
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

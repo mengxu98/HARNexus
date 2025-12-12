@@ -41,21 +41,10 @@ metadata$Sequence <- "scRNA-seq"
 metadata$Sample <- metadata$Cells
 metadata$Sample_ID <- metadata$Cells
 metadata$Brain_Region <- metadata$Region <- "Neocortex"
-mapping <- c(
-  "Astro"   = "Astrocytes",
-  "Endo"    = "Endothelial cells",
-  "ExN"     = "Excitatory neurons",
-  "InN"     = "Inhibitory neurons",
-  "Micro"   = "Microglia",
-  "NPC"     = "Neural progenitor cells",
-  "Olig"    = "Oligodendrocytes",
-  "OPC"     = "Oligodendrocyte progenitor cells",
-  "Perc"    = "Pericytes"
-)
-metadata$CellType <- mapping[metadata$CellType]
+metadata$CellType_raw <- metadata$CellType
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

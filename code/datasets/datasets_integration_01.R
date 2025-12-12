@@ -12,14 +12,16 @@ log_message("Start loading data...")
 
 datasets <- c(
   "AllenM1", "EGAD00001006049", "EGAS00001006537",
-  "GSE103723", "GSE104276", "GSE144136", "GSE168408", "GSE178175",
-  "GSE186538", "GSE199762", "GSE202210", "GSE204683", "GSE207334",
-  "GSE212606", "GSE217511", "GSE67835", "GSE81475", "GSE97942",
-  "Li_et_al_2018", "Ma_et_al_2022", "Nowakowski_et_al_2017",
+  "GSE103723", "GSE104276", "GSE144136", "GSE168408",
+  "GSE178175", "GSE186538", "GSE199762", "GSE202210",
+  "GSE204683", "GSE207334", "GSE212606", "GSE217511",
+  "GSE261983", "GSE296073", "GSE67835", "GSE81475", "GSE97942",
+  "HYPOMAP", "Li_et_al_2018",
+  "Ma_et_al_2022", "Nowakowski_et_al_2017",
   "PRJCA015229", "ROSMAP", "SomaMut"
 )
 
-objects_list_file <- file.path(res_dir, "objects_list.rds")
+objects_list_file <- file.path(res_dir, "objects_list_raw.rds")
 if (!file.exists(objects_list_file)) {
   objects_list <- list()
   for (dataset in datasets) {
@@ -55,14 +57,14 @@ if (!file.exists(objects_list_file)) {
   metadata$Age_num[pcw_idx] <- get_num(metadata$Age[pcw_idx])
   yr_idx <- metadata$Unit == "Years"
   metadata$Age_num[yr_idx] <- as.numeric(metadata$Age[yr_idx])
-  metadata$Stage <- dplyr::case_when(
+  metadata$DevelopmentStage <- dplyr::case_when(
     metadata$Age_num >= 4 & metadata$Age_num < 8 & metadata$Unit == "PCW" ~ "Embryonic (4–8 PCW)",
     metadata$Age_num >= 8 & metadata$Age_num < 10 & metadata$Unit == "PCW" ~ "Early fetal (8–10 PCW)",
     metadata$Age_num >= 10 & metadata$Age_num < 13 & metadata$Unit == "PCW" ~ "Early fetal (10–13 PCW)",
     metadata$Age_num >= 13 & metadata$Age_num < 16 & metadata$Unit == "PCW" ~ "Early mid-fetal (13–16 PCW)",
     metadata$Age_num >= 16 & metadata$Age_num < 19 & metadata$Unit == "PCW" ~ "Early mid-fetal (16–19 PCW)",
     metadata$Age_num >= 19 & metadata$Age_num < 24 & metadata$Unit == "PCW" ~ "Late mid-fetal (19–24 PCW)",
-    metadata$Age_num >= 24 & metadata$Age_num < 38 & metadata$Unit == "PCW" ~ "Late fetal (24–38 PCW)",
+    metadata$Age_num >= 24 & metadata$Age_num < 39 & metadata$Unit == "PCW" ~ "Late fetal (24–38 PCW)",
     metadata$Age_num >= 0 & metadata$Age_num < 0.5 & metadata$Unit == "Years" ~ "Neonatal and early infancy (0–0.5Y)",
     metadata$Age_num >= 0.5 & metadata$Age_num < 1 & metadata$Unit == "Years" ~ "Late infancy (0.5–1Y)",
     metadata$Age_num >= 1 & metadata$Age_num < 6 & metadata$Unit == "Years" ~ "Early childhood (1–6Y)",
@@ -74,14 +76,14 @@ if (!file.exists(objects_list_file)) {
     TRUE ~ NA_character_
   )
 
-  metadata$DevelopmentStage <- dplyr::case_when(
+  metadata$Stage <- dplyr::case_when(
     metadata$Age_num >= 4 & metadata$Age_num < 8 & metadata$Unit == "PCW" ~ "S1",
     metadata$Age_num >= 8 & metadata$Age_num < 10 & metadata$Unit == "PCW" ~ "S2",
     metadata$Age_num >= 10 & metadata$Age_num < 13 & metadata$Unit == "PCW" ~ "S3",
     metadata$Age_num >= 13 & metadata$Age_num < 16 & metadata$Unit == "PCW" ~ "S4",
     metadata$Age_num >= 16 & metadata$Age_num < 19 & metadata$Unit == "PCW" ~ "S5",
     metadata$Age_num >= 19 & metadata$Age_num < 24 & metadata$Unit == "PCW" ~ "S6",
-    metadata$Age_num >= 24 & metadata$Age_num < 38 & metadata$Unit == "PCW" ~ "S7",
+    metadata$Age_num >= 24 & metadata$Age_num < 39 & metadata$Unit == "PCW" ~ "S7",
     metadata$Age_num >= 0 & metadata$Age_num < 0.5 & metadata$Unit == "Years" ~ "S8",
     metadata$Age_num >= 0.5 & metadata$Age_num < 1 & metadata$Unit == "Years" ~ "S9",
     metadata$Age_num >= 1 & metadata$Age_num < 6 & metadata$Unit == "Years" ~ "S10",
@@ -93,27 +95,36 @@ if (!file.exists(objects_list_file)) {
     TRUE ~ NA_character_
   )
 
-  celltype_keep <- c(
-    "Astrocytes",
-    "Excitatory neurons",
-    "Inhibitory neurons",
-    "Intermediate progenitor cells",
-    "Microglia",
-    "Neural progenitor cells",
-    "Neuroblasts",
-    "Oligodendrocyte progenitor cells",
-    "Oligodendrocytes",
-    "Radial glia"
-  )
-  metadata <- subset(metadata, CellType %in% celltype_keep)
-
   regions <- sort(unique(metadata$Brain_Region))
   brain_region_map <- setNames(regions, regions)
 
+  # Other datasets
   brain_region_map["Intra-temporal cortex"] <- "Temporal cortex"
   brain_region_map["cortical plate"] <- "Cortical plate"
   brain_region_map["Anterior cingulate cortex "] <- "Anterior cingulate cortex"
   brain_region_map["Ganglionic eminences"] <- "Ganglionic eminence"
+
+  # HYPOMAP
+  brain_region_map["ARC"] <- "Arcuate nucleus"
+  brain_region_map["DMH"] <- "Dorsomedial hypothalamus"
+  brain_region_map["Fx/OT/ac"] <- "Fornix/Optic tract/Anterior commissure"
+  brain_region_map["LH"] <- "Lateral hypothalamus"
+  brain_region_map["LPOA"] <- "Lateral preoptic area"
+  brain_region_map["LTN"] <- "Lateral tuberal nucleus"
+  brain_region_map["MAM"] <- "Mammillary nuclei"
+  brain_region_map["ME"] <- "Median eminence"
+  brain_region_map["MPOA"] <- "Medial preoptic area"
+  brain_region_map["Perivent"] <- "Periventricular region"
+  brain_region_map["POA"] <- "Preoptic area"
+  brain_region_map["Thalamaus"] <- "Thalamus"
+  brain_region_map["PVN"] <- "Paraventricular nucleus"
+  brain_region_map["SCN"] <- "Suprachiasmatic nucleus"
+  brain_region_map["SON"] <- "Supraoptic nucleus"
+  brain_region_map["TMN"] <- "Tuberomammillary nucleus"
+  brain_region_map["Vascular"] <- "Vascular"
+  brain_region_map["Vent"] <- "Ventricle"
+  brain_region_map["VMH"] <- "Ventromedial hypothalamus"
+
 
   # GSE204683
   brain_region_map["BA 9/46"] <- "Frontal cortex"
@@ -134,31 +145,32 @@ if (!file.exists(objects_list_file)) {
   for (h in h_labels) brain_region_map[h] <- "Entorhinal cortex"
 
   metadata$BrainRegion <- brain_region_map[metadata$Brain_Region]
-  metadata <- metadata[metadata$BrainRegion != "Cortex", ]
+
+  region_map <- c(
+    "Cortex" = "Cerebral cortex",
+    "Cerebral cortex" = "Cerebral cortex",
+    "Prefrontal Cortex" = "Prefrontal cortex",
+    "Prefrontal cortex" = "Prefrontal cortex",
+    "Periventricular" = "Periventricular region",
+    "Periventricular region" = "Periventricular region",
+    "Midbrain ventral" = "Ventral midbrain",
+    "Whole" = "Whole brain (prenatal)"
+  )
+  metadata$BrainRegion <- ifelse(
+    metadata$BrainRegion %in% names(region_map),
+    region_map[metadata$BrainRegion],
+    metadata$BrainRegion
+  )
   metadata <- metadata[metadata$BrainRegion != "Choroid", ]
-  metadata <- na.omit(metadata)
+
   colnames_order <- c(
     "Cells", "Dataset", "Technology", "Sequence", "Sample", "Sample_ID",
-    "CellType", "BrainRegion", "Stage", "DevelopmentStage", "Age", "Sex"
+    "CellType_raw", "BrainRegion", "Stage", "DevelopmentStage", "Age", "Sex"
   )
-  metadata <- metadata[, colnames_order]
-  saveRDS(metadata, file.path(res_dir, "metadata_filtered.rds"))
-  metadata_list <- split(metadata, metadata$Dataset)
+  metadata$CellType_raw[is.na(metadata$CellType_raw)] <- "Unknown"
 
-  objects_list2 <- lapply(
-    names(metadata_list), function(x) {
-      log_message("Processing dataset: {.val {x}}...")
-      meta <- metadata_list[[x]]
-      obj <- objects_list[[x]]
-      obj <- obj[, meta$Cells]
-      obj <- CreateSeuratObject(
-        counts = GetAssayData(obj, layer = "counts"),
-        meta.data = meta
-      )
-      obj <- JoinLayers(obj)
-      obj
-    }
-  )
-  names(objects_list2) <- names(metadata_list)
-  saveRDS(objects_list2, objects_list_file)
+  metadata <- metadata[, colnames_order]
+  metadata <- na.omit(metadata)
+  saveRDS(metadata, file.path(res_dir, "metadata_filtered.rds"))
+  saveRDS(objects_list, objects_list_file)
 }

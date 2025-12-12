@@ -17,39 +17,8 @@ metadata$Technology <- "STRT-seq"
 metadata$Sequence <- "scRNA-seq"
 metadata$Sample <- metadata$donor_ID
 metadata$Sample_ID <- metadata$sample
-mapping <- c(
-  "Astrocyte" = "Astrocytes",
-  "Bergmann glia" = "Bergmann glia",
-  "CGE interneuron" = "Interneurons",
-  "Cerebellar inhibitory" = "Inhibitory neurons",
-  "Committed oligodendrocyte precursor" = "Oligodendrocyte progenitor cells",
-  "Deep-layer corticothalamic and 6b" = "Excitatory neurons",
-  "Deep-layer intratelencephalic" = "Excitatory neurons",
-  "Deep-layer near-projecting" = "Excitatory neurons",
-  "Eccentric medium spiny neuron" = "Medium spiny neurons",
-  "Ependymal" = "Ependymal cells",
-  "Fibroblast" = "Fibroblasts",
-  "Hippocampal CA1-3" = "Excitatory neurons",
-  "Hippocampal CA4" = "Excitatory neurons",
-  "Hippocampal dentate gyrus" = "Excitatory neurons",
-  "LAMP5-LHX6 and Chandelier" = "Inhibitory neurons",
-  "Lower rhombic lip" = "Rhombic lip cells",
-  "MGE interneuron" = "Interneurons",
-  "Mammillary body" = "Mammillary body cells",
-  "Microglia" = "Microglia",
-  "Midbrain-derived inhibitory" = "Inhibitory neurons",
-  "Miscellaneous" = "Unclassified cells",
-  "Oligodendrocyte" = "Oligodendrocytes",
-  "Oligodendrocyte precursor" = "Oligodendrocyte progenitor cells",
-  "Splatter" = "Unclassified cells",
-  "Thalamic excitatory" = "Excitatory neurons",
-  "Upper rhombic lip" = "Rhombic lip cells",
-  "Vascular" = "Vascular cells",
-  "unannoted" = "Unclassified cells"
-)
 
-metadata$CellType <- mapping[metadata$cell_type]
-metadata <- metadata[metadata$CellType != "Unclassified cells", ]
+metadata$CellType_raw <- metadata$cell_type
 metadata$Brain_Region <- metadata$region
 metadata$Region <- metadata$region
 metadata$Age <- metadata$donor_age
@@ -59,7 +28,7 @@ metadata$Sex <- ifelse(metadata$Sex == "F", "Female", "Male")
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)

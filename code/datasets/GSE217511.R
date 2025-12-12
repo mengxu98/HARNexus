@@ -443,47 +443,17 @@ matched_indices <- match(common_cells, combined_metadata$cell_barcode_clean)
 metadata <- combined_metadata[common_cells, ]
 rownames(metadata) <- combined_metadata$cell_barcode_clean[matched_indices]
 
-
 metadata$Cells <- rownames(metadata)
 metadata$Dataset <- "GSE217511"
 metadata$Technology <- "10X Genomics"
 metadata$Sequence <- "snRNA-seq"
 metadata$Sample <- metadata$sample
 metadata$Sex <- ifelse(metadata$Sex == "female", "Female", "Male")
-mapping <- c(
-  "AC" = "Astrocytes",
-  "AC-f" = "Astrocytes",
-  "AC-p" = "Astrocytes",
-  "RG/AC" = "Radial glia",
-  "gIPC" = "Intermediate progenitor cells",
-  "nIPC" = "Intermediate progenitor cells",
-  "TAC" = "Transit amplifying cells",
-  "L2/3 CPN" = "Excitatory neurons",
-  "L4 CPN" = "Excitatory neurons",
-  "L4/5a CPN" = "Excitatory neurons",
-  "L5/6 CPN" = "Excitatory neurons",
-  "L6 CPN" = "Excitatory neurons",
-  "IN" = "Inhibitory neurons",
-  "IN 5HTR3a" = "Inhibitory neurons",
-  "IN PV" = "Inhibitory neurons",
-  "IN SOM" = "Inhibitory neurons",
-  "SPN" = "Striatal projection neurons",
-  "MSN" = "Medium spiny neurons",
-  "OL" = "Oligodendrocytes",
-  "preOL" = "Pre-oligodendrocytes",
-  "OPC" = "Oligodendrocyte progenitor cells",
-  "MG" = "Microglia",
-  "BVC" = "Vascular cells",
-  "CP" = "Choroid plexus epithelial cells",
-  "CRN" = "Cajal–Retzius neurons",
-  "UD" = "Unclassified cells"
-)
-metadata$CellType <- mapping[metadata$celltypes]
-metadata <- metadata[metadata$CellType != "Unclassified cells", ]
+metadata$CellType_raw <- metadata$celltypes
 
 column_order <- c(
   "Cells", "Dataset", "Technology", "Sequence", "Sample",
-  "Sample_ID", "CellType", "Brain_Region", "Region", "Age", "Sex"
+  "Sample_ID", "CellType_raw", "Brain_Region", "Region", "Age", "Sex"
 )
 metadata <- metadata[, column_order]
 metadata <- na.omit(metadata)
