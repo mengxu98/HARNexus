@@ -131,7 +131,7 @@ if (!file.exists(objects_list_file)) {
   brain_region_map["BM_9/10/46"] <- "Dorsolateral prefrontal cortex"
 
   # GSE97942
-  brain_region_map["CBC"] <- "Cerebellar cortex"
+  brain_region_map["CBC"] <- "Cerebellum"
   brain_region_map["FC"] <- "Frontal cortex"
   brain_region_map["V1C"] <- "Primary visual cortex"
 

@@ -164,8 +164,5 @@ Idents(objects) <- "CellType"
 log_message("Save data...")
 saveRDS(objects, file.path(res_dir, "objects_celltypes.rds"))
 
-objects_sub <- subset(objects, subset = Dataset == "GSE97942")
-saveRDS(objects_sub, file.path(res_dir, "GSE97942_processed.rds"))
-
 objects_plot <- objects[intersect(rownames(objects), marker_genes), ]
 saveRDS(objects_plot, file.path(res_dir, "objects_celltype_plot.rds"))
