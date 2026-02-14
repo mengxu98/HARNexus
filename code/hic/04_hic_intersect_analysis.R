@@ -5,15 +5,13 @@ res_dir <- check_dir("results/hic")
 
 log_message("Loading data...")
 network_list <- readRDS(
-  "results/networks/gse97942/astro_4methods_networks.rds"
+  "results/gse97942/astro_4methods_networks.rds"
 )
 
 hic_data <- read.csv(
   "results/hic/HAR_gene_HiC_supported.csv",
   header = TRUE
 )
-colnames(hic_data) <- c("HAR", "HAR_ID", "hic_gene", "HiC_read_count")
-hic_data <- na.omit(hic_data)
 
 tfdb_data <- read.csv(
   "results/har_tf/human/har_tf_pairs_scores.csv"

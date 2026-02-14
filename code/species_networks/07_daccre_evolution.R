@@ -52,8 +52,8 @@ for (pair in sample_pairs) {
       in_human <- g %in% human_genes_ct
       in_chimp <- g %in% chimp_genes_ct
       network_status <- ifelse(
-        in_human & !in_chimp, "Human-only",
-        ifelse(!in_human & in_chimp, "Chimp-only", "Not biased")
+        in_human & !in_chimp, "Human-biased",
+        ifelse(!in_human & in_chimp, "Chimp-biased", "Not biased")
       )
       results[[paste(ct, g, sep = "_")]] <- data.frame(
         Gene = g,
@@ -167,11 +167,11 @@ for (pair in sample_pairs) {
     # - Cis-regulatory Activation: old connection, new activity
     # - Regulatory Rewiring: old activity, new connection
     # - Conserved: new network and old activity
-    if (net_status == "Human-only" && peak_status == "Chromatin accessible") {
+    if (net_status == "Human-biased" && peak_status == "Chromatin accessible") {
       core_df$Evolution_type[i] <- "Regulatory innovation"
     } else if (net_status == "Not biased" && peak_status == "Chromatin accessible") {
       core_df$Evolution_type[i] <- "Cis-regulatory activation"
-    } else if (net_status == "Human-only" && peak_status == "Chromatin inaccessible") {
+    } else if (net_status == "Human-biased" && peak_status == "Chromatin inaccessible") {
       core_df$Evolution_type[i] <- "Regulatory rewiring"
     } else {
       core_df$Evolution_type[i] <- "Conserved"

@@ -5,10 +5,6 @@ set -e
 source "code/functions/utils.sh"
 
 code_dir="code/networks"
-res_dir="results/networks/gse97942/"
-if [ ! -d "$res_dir" ]; then
-  mkdir -p "$res_dir"
-fi
 
 check_command Rscript
 

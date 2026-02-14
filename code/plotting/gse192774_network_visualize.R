@@ -61,7 +61,10 @@ for (pair in sample_pairs) {
 
   for (selected_celltype in selected_celltypes) {
     if (!selected_celltype %in% node_annotation$CellType) {
-      log_message("Cell type {.val {selected_celltype}} not found in annotation, skipping...", message_type = "warning")
+      log_message(
+        "Cell type {.val {selected_celltype}} not found in annotation, skipping...",
+        message_type = "warning"
+      )
       next
     }
 

@@ -5,7 +5,7 @@ set -e
 source "code/functions/utils.sh"
 
 code_dir="code/hic"
-res_dir="results/networks/gse97942/"
+res_dir="results/gse97942/"
 if [ ! -d "$res_dir" ]; then
   mkdir -p "$res_dir"
 fi

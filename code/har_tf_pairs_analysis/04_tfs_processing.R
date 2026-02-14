@@ -147,14 +147,14 @@ for (species in c("human", "chimp")) {
   )
   fwrite(
     consensus_all[, .(
-      har, Sequence, start, end, strand,
-      cisbp_motif_name, jaspar_motif_name,
-      hocomoco_motif_name, htftarget_motif_name, TF
+      har, start, end, strand, TF,
+      motif = jaspar_motif_name,
+      score = jaspar_score,
+      Species = ifelse(species == "human", "Human", "Chimpanzee")
     )],
     file = file.path(result_dir, "har_tf_pairs.csv"),
     sep = ","
   )
-
 
   cisbp_hars <- unique(cisbp_summary$har)
   jaspar_hars <- unique(jaspar_summary$har)

@@ -55,8 +55,8 @@ for (pair in sample_pairs) {
   evolution_data$Chimp_ATAC <- (evolution_data$n_Chimp_gained > 0) |
     (evolution_data$n_both_peaks > 0)
 
-  in_human_net <- evolution_data$Target_type %in% c("Human-only", "Not biased")
-  in_chimp_net <- evolution_data$Target_type %in% c("Chimp-only", "Not biased")
+  in_human_net <- evolution_data$Target_type %in% c("Human-biased", "Not biased")
+  in_chimp_net <- evolution_data$Target_type %in% c("Chimp-biased", "Not biased")
   n_total_human <- sum(in_human_net)
   n_accessible_human <- sum(evolution_data$Human_ATAC[in_human_net])
   n_total_chimp <- sum(in_chimp_net)
@@ -147,8 +147,8 @@ for (pair in sample_pairs) {
   atac_by_ct_list <- list()
   for (ct in celltype_levels) {
     ct_data <- evolution_data[evolution_data$CellType == ct, ]
-    in_human_net_ct <- ct_data$Target_type %in% c("Human-only", "Not biased")
-    in_chimp_net_ct <- ct_data$Target_type %in% c("Chimp-only", "Not biased")
+    in_human_net_ct <- ct_data$Target_type %in% c("Human-biased", "Not biased")
+    in_chimp_net_ct <- ct_data$Target_type %in% c("Chimp-biased", "Not biased")
     n_total_human_ct <- sum(in_human_net_ct)
     n_total_chimp_ct <- sum(in_chimp_net_ct)
     n_accessible_human_ct <- sum(ct_data$Human_ATAC[in_human_net_ct])
@@ -265,7 +265,7 @@ for (pair in sample_pairs) {
   )
 
   trajectory_data_human <- trajectory_data[
-    trajectory_data$Target_type %in% c("Human-only", "Not biased"),
+    trajectory_data$Target_type %in% c("Human-biased", "Not biased"),
   ]
   trajectory_data_human$CellType <- factor(
     as.character(trajectory_data_human$CellType),

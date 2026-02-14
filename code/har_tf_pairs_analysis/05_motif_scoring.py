@@ -408,9 +408,9 @@ for har_id, tf_name in all_har_tf_pairs:
             
             diff = best_human - best_chimp
             direction = (
-                "gain_in_human"
+                "Gain in human"
                 if diff > 0.5
-                else ("gain_in_chimp" if diff < -0.5 else "similar")
+                else ("Gain in chimpanzee" if diff < -0.5 else "No difference")
             )
             rows.append(
                 [

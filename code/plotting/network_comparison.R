@@ -9,7 +9,7 @@ fig_dir <- check_dir("figures/gse97942/")
 methods_order <- c("GENIE3", "HARNexus", "LEAP", "PPCOR")
 
 network_list <- readRDS(
-  "results/networks/gse97942/astro_4methods_networks.rds"
+  "results/gse97942/astro_4methods_networks.rds"
 )
 
 coverage_plot <- coverage_trend_plot(

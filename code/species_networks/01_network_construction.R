@@ -392,7 +392,9 @@ for (pair in sample_pairs) {
             net
           },
           error = function(e) {
-            log_message("  Error building network for Chimpanzee {.val {ct}}: {.val {conditionMessage(e)}}")
+            log_message(
+              "  Error building network for Chimpanzee {.val {ct}}: {.val {conditionMessage(e)}}"
+            )
             not_built_networks <<- rbind(
               not_built_networks,
               data.frame(
@@ -417,14 +419,26 @@ for (pair in sample_pairs) {
 
   write.csv(
     built_networks,
-    file.path(res_dir, paste0("built_networks_summary_", human_sample, "_", chimp_sample, ".csv")),
+    file.path(
+      res_dir,
+      paste0(
+        "built_networks_summary_",
+        human_sample, "_", chimp_sample, ".csv"
+      )
+    ),
     row.names = FALSE,
     quote = FALSE
   )
 
   write.csv(
     not_built_networks,
-    file.path(res_dir, paste0("not_built_networks_summary_", human_sample, "_", chimp_sample, ".csv")),
+    file.path(
+      res_dir,
+      paste0(
+        "not_built_networks_summary_",
+        human_sample, "_", chimp_sample, ".csv"
+      )
+    ),
     row.names = FALSE,
     quote = FALSE
   )

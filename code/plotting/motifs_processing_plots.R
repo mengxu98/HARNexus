@@ -17,12 +17,6 @@ grouped <- read.csv(
   stringsAsFactors = FALSE
 )
 
-direction_labels <- c(
-  "gain_in_human" = "Gain in human",
-  "gain_in_chimp" = "Gain in chimpanzee",
-  "similar" = "No difference"
-)
-
 p_direction <- ggplot(
   grouped, aes(x = Direction, fill = Direction)
 ) +
@@ -35,13 +29,11 @@ p_direction <- ggplot(
   ) +
   scale_fill_manual(
     values = c(
-      "gain_in_human" = human_color,
-      "gain_in_chimp" = chimp_color,
-      "similar" = "gray60"
-    ),
-    labels = direction_labels
+      "Gain in human" = human_color,
+      "Gain in chimpanzee" = chimp_color,
+      "No difference" = "gray60"
+    )
   ) +
-  scale_x_discrete(labels = direction_labels) +
   theme_bw() +
   theme(
     panel.grid.major = element_blank(),
@@ -67,7 +59,7 @@ ggsave(
   height = 3
 )
 
-venn_list <- readRDS(file.path(result_dir, "tf_direction_venn_sets.rds"))
+venn_list <- readRDS(file.path(result_dir, "tf_direction_sets.rds"))
 colors_direction <- c(
   "Gain in human" = human_color,
   "Gain in chimpanzee" = chimp_color,
@@ -95,68 +87,6 @@ p_venn <- ggVennDiagram(
     panel.grid = element_blank(),
     legend.position = "none"
   )
-
-label_mapping <- c(
-  "Gain in Human" = "Gain in human",
-  "Gain in Chimp" = "Gain in chimpanzee",
-  "No Difference" = "No difference"
-)
-
-labels_to_move <- c(
-  "Gain in human", "Gain in chimpanzee"
-)
-
-gb_venn <- ggplot_build(p_venn)
-set_label_layer_idx <- NULL
-set_label_layer_data <- NULL
-for (i in seq_along(gb_venn$data)) {
-  d <- gb_venn$data[[i]]
-  if ("label" %in% names(d) && any(d$label %in% names(venn_list))) {
-    set_label_layer_idx <- i
-    set_label_layer_data <- d
-    break
-  }
-}
-
-if (!is.null(set_label_layer_idx) && !is.null(set_label_layer_data)) {
-  set_labels_df <- unique(
-    set_label_layer_data[set_label_layer_data$label %in% names(venn_list), c("x", "y", "label")]
-  )
-
-  set_labels_df$display_label <- sapply(set_labels_df$label, function(l) {
-    if (l %in% names(label_mapping)) {
-      label_mapping[[l]]
-    } else {
-      l
-    }
-  })
-
-  center_x <- mean(set_labels_df$x, na.rm = TRUE)
-  center_y <- mean(set_labels_df$y, na.rm = TRUE)
-
-  should_move <- set_labels_df$label %in% labels_to_move |
-    set_labels_df$display_label %in% c("Gain in human", "Gain in chimpanzee")
-
-  set_labels_df$x <- ifelse(
-    should_move,
-    set_labels_df$x + (center_x - set_labels_df$x) * 0.4,
-    set_labels_df$x
-  )
-  set_labels_df$y <- ifelse(
-    should_move,
-    set_labels_df$y,
-    set_labels_df$y
-  )
-
-  p_venn$layers[[set_label_layer_idx]] <- NULL
-  p_venn <- p_venn + geom_text(
-    data = set_labels_df,
-    aes(x = x, y = y, label = display_label),
-    inherit.aes = FALSE,
-    color = "black",
-    size = 4
-  )
-}
 
 ggsave(
   file.path(fig_dir, "venn_tf_direction.pdf"),

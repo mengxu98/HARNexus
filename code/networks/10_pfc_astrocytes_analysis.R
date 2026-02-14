@@ -1,14 +1,17 @@
 source("code/functions/prepare_env.R")
 
 log_message("Loading data...")
-res_dir <- check_dir("results/networks/analysis/")
+res_dir <- check_dir("results/pfc_astrocytes")
 
 region_name <- "Prefrontal cortex"
 celltype_name <- "Astrocytes"
 dims <- 1:10
 
 objects <- readRDS(
-  file.path(res_dir, paste0("object_", region_name, "_", celltype_name, ".rds"))
+  paste0(
+    "results/networks/analysis/object_",
+    region_name, "_", celltype_name, ".rds"
+  )
 )
 
 selected_stages <- c("S6", "S7", "S11", "S12")
@@ -23,7 +26,7 @@ csv_dir <- "results/networks/har_csn_atlas/csv"
 network_list <- lapply(
   selected_stages, function(s) {
     f <- file.path(
-      csv_dir, paste0("Prefrontal cortex_", s, "_", celltype_name, ".csv")
+      csv_dir, paste0(region_name, "_", s, "_", celltype_name, ".csv")
     )
     if (!file.exists(f)) {
       return(NULL)
@@ -43,9 +46,21 @@ exclude_genes <- c(
   "AGT", "DLC1", "CDH20", "SPON1"
 )
 target_genes <- target_genes[!target_genes %in% exclude_genes]
-
+write.csv(
+  target_genes,
+  file.path(res_dir, "target_genes.csv"),
+  row.names = FALSE,
+  quote = FALSE
+)
 objects_var <- NormalizeData(objects)
 objects_var <- FindVariableFeatures(objects_var, nfeatures = 500)
+var_genes <- VariableFeatures(objects_var)
+write.csv(
+  var_genes,
+  file.path(res_dir, "var_genes.csv"),
+  row.names = FALSE,
+  quote = FALSE
+)
 objects_var <- ScaleData(objects_var)
 objects_var <- RunPCA(objects_var)
 objects_var <- FindNeighbors(

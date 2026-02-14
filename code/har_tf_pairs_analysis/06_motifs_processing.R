@@ -13,39 +13,32 @@ grouped <- df[, .(
 
 grouped[, Mean_Diff := Mean_Human_Score - Mean_Chimp_Score]
 grouped[, Direction := fifelse(
-  Mean_Diff > 0, "gain_in_human",
-  fifelse(Mean_Diff < 0, "gain_in_chimp", "similar")
+  Mean_Diff > 0, "Gain in human",
+  fifelse(Mean_Diff < 0, "Gain in chimpanzee", "No difference")
 )]
-
-direction_labels <- c(
-  "gain_in_human" = "Gain in human",
-  "gain_in_chimp" = "Gain in chimp",
-  "similar" = "No difference"
-)
 
 fwrite(
   grouped,
   file.path(result_dir, "motif_score_aggregated.csv")
 )
 
-log_message("Aggregated results saved to {.file motif_score_aggregated.csv}")
-human_tfs <- unique(grouped[Direction == "gain_in_human", TF_Name])
-chimp_tfs <- unique(grouped[Direction == "gain_in_chimp", TF_Name])
+human_tfs <- unique(grouped[Direction == "Gain in human", TF_Name])
+chimp_tfs <- unique(grouped[Direction == "Gain in chimpanzee", TF_Name])
 
 summary_direction <- grouped[, .N, by = Direction]
-log_message("Direction summary:", message_type = "info")
+log_message("Direction summary:")
 print(summary_direction)
 
-grouped_human <- grouped[Direction == "gain_in_human"]
-grouped_chimp <- grouped[Direction == "gain_in_chimp"]
-grouped_similar <- grouped[Direction == "similar"]
+grouped_human <- grouped[Direction == "Gain in human"]
+grouped_chimp <- grouped[Direction == "Gain in chimpanzee"]
+grouped_similar <- grouped[Direction == "No difference"]
 
 top_tf_gain_human <- grouped_human[, .N, by = TF_Name][order(-N)]
-log_message("Top 10 TFs with gain in human:", message_type = "info")
+log_message("Top 10 TFs with gain in human:")
 print(top_tf_gain_human[1:10])
 
 top_tf_gain_chimp <- grouped_chimp[, .N, by = TF_Name][order(-N)]
-log_message("Top 10 TFs with gain in chimp:", message_type = "info")
+log_message("Top 10 TFs with gain in chimp:")
 print(top_tf_gain_chimp[1:10])
 
 har_gain_human <- grouped_human[, uniqueN(HAR_ID)]
@@ -59,7 +52,7 @@ log_message(
   )
 )
 
-grouped_gain <- grouped[Direction %in% c("gain_in_human", "gain_in_chimp")]
+grouped_gain <- grouped[Direction %in% c("Gain in human", "Gain in chimpanzee")]
 
 top_gain <- grouped_gain[, .N, by = .(TF_Name, Direction)]
 
@@ -72,28 +65,12 @@ fwrite(
   file.path(result_dir, "tf_gain_counts_by_direction.csv")
 )
 
-tfs_human_gain <- top_gain[Direction == "gain_in_human", TF_Name]
-tfs_chimp_gain <- top_gain[Direction == "gain_in_chimp", TF_Name]
+tfs_human_gain <- top_gain[Direction == "Gain in human", TF_Name]
+tfs_chimp_gain <- top_gain[Direction == "Gain in chimpanzee", TF_Name]
 
-tf_gain_summary <- grouped_gain[, .(
-  gain_in_human = sum(Direction == "gain_in_human"),
-  gain_in_chimp = sum(Direction == "gain_in_chimp")
-), by = TF_Name]
-
-tf_gain_summary[, log2_ratio := log2((gain_in_human + 1) / (gain_in_chimp + 1))]
-
-fwrite(
-  tf_gain_summary,
-  file.path(result_dir, "tf_gain_bias_summary.csv")
-)
-
-tf_gain_plot <- tf_gain_summary[gain_in_human + gain_in_chimp > 0]
-tf_gain_plot <- setorder(tf_gain_plot, log2_ratio)
-
-
-tfs_gain_human <- unique(grouped[Direction == "gain_in_human", TF_Name])
-tfs_gain_chimp <- unique(grouped[Direction == "gain_in_chimp", TF_Name])
-tfs_similar <- unique(grouped[Direction == "similar", TF_Name])
+tfs_gain_human <- unique(grouped[Direction == "Gain in human", TF_Name])
+tfs_gain_chimp <- unique(grouped[Direction == "Gain in chimpanzee", TF_Name])
+tfs_similar <- unique(grouped[Direction == "No difference", TF_Name])
 
 log_message(
   sprintf(
@@ -105,19 +82,14 @@ log_message(
 )
 
 venn_list <- list(
-  "Gain in Human" = tfs_gain_human,
-  "Gain in Chimp" = tfs_gain_chimp,
-  "No Difference" = tfs_similar
+  "Gain in human" = tfs_gain_human,
+  "Gain in chimpanzee" = tfs_gain_chimp,
+  "No difference" = tfs_similar
 )
 
-colors_direction <- c(
-  "Gain in Human" = "#e41a1c",
-  "Gain in Chimp" = "#377eb8",
-  "No Difference" = "gray60"
-)
 saveRDS(
   venn_list,
-  file.path(result_dir, "tf_direction_venn_sets.rds")
+  file.path(result_dir, "tf_direction_sets.rds")
 )
 
 log_message("Motif processing complete!", message_type = "success")
