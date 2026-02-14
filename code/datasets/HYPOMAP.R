@@ -1,6 +1,3 @@
-rm(list = ls())
-gc()
-
 source("code/functions/prepare_env.R")
 
 data_dir <- "../../data/BrainData/raw/HYPOMAP"

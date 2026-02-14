@@ -1,29 +1,24 @@
 #!/usr/bin/env python3
 """
-Convert BTS_atlas.h5ad to a format compatible with scop's adata_to_srt function
-and save count matrix and metadata as CSV files
 paper: https://doi.org/10.1038/s12276-024-01328-6
 data: https://zenodo.org/records/10939707
 """
 
 import scanpy as sc
-import pandas as pd  # Needed for DataFrame operations and to_csv
+import pandas as pd
 from scipy import sparse
 import os
 import sys
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
-# Set paths
 data_dir = "../../data/BrainData/raw/BTSatlas"
 res_dir = "../../data/BrainData/processed/BTSatlas/"
 os.makedirs(res_dir, exist_ok=True)
 
 log_message("Start loading data...", message_type="running")
 
-# Load h5ad file
 h5ad_path = os.path.join(data_dir, "BTS_atlas.h5ad")
 if not os.path.exists(h5ad_path):
     log_message("Error: {.path ", h5ad_path, "} does not exist", message_type="error")

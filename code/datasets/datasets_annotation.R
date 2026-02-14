@@ -1,6 +1,3 @@
-rm(list = ls())
-gc()
-
 library(Seurat)
 library(ggplot2)
 library(patchwork)

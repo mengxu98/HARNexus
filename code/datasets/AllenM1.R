@@ -1,7 +1,6 @@
-rm(list = ls())
-gc()
-
 source("code/functions/prepare_env.R")
+
+# https://brain-map.org/our-research/cell-types-taxonomies/cell-types-database-rna-seq-data/human-m1-10x
 
 res_dir <- check_dir("../../data/BrainData/processed/AllenM1/")
 

@@ -1,6 +1,3 @@
-rm(list = ls())
-gc()
-
 source("code/functions/prepare_env.R")
 PrepareEnv()
 sc <- reticulate::import("scanpy")

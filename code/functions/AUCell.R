@@ -1,13 +1,12 @@
-source("code/functions/utils.R")
-
-
 plot_auc_dimred <- function(
     seurat,
     gene_set_name,
     reduction = "umap",
     point_size = 0.5,
-    show_labels = TRUE,
-    color_palette_method) {
+    highlight_celltypes = NULL,
+    highlight_color = "#D70440",
+    show_auc_legend = FALSE,
+    color_methods) {
   dim_coords <- as.data.frame(
     seurat@reductions[[reduction]]@cell.embeddings
   )
@@ -21,7 +20,7 @@ plot_auc_dimred <- function(
         seurat[[paste0("Pass_threshold_", gene_set_name)]]
       )
     ),
-    CellType = seurat$cell_name
+    CellType = seurat$CellType
   )
 
   centroids <- plot_data %>%
@@ -42,7 +41,7 @@ plot_auc_dimred <- function(
   if (grepl("Random", method_name)) {
     method_name <- gene_set_name
   }
-  gene_set_color <- color_palette_method[method_name]
+  gene_set_color <- color_methods[method_name]
 
   n_breaks <- 1000
   color_pal_neg <- colorRampPalette(
@@ -57,39 +56,80 @@ plot_auc_dimred <- function(
     plot_data,
     aes(x = .data[[dim_labels[1]]], y = .data[[dim_labels[2]]])
   ) +
-    geom_point(aes(color = .data$AUC), size = point_size) +
+    ggrastr::geom_point_rast(
+      aes(color = .data$AUC),
+      size = 0.5, raster.dpi = 300
+    ) +
     scale_color_gradientn(
       colors = full_palette,
-      limits = range(plot_data$AUC, na.rm = TRUE)
+      limits = range(plot_data$AUC, na.rm = TRUE),
+      guide = if (show_auc_legend) "colorbar" else "none"
     ) +
     labs(
       title = gene_set_name,
       x = dim_labels[1],
       y = dim_labels[2],
-      color = "AUC"
+      color = if (show_auc_legend) "AUC" else NULL
     ) +
-    theme_bw() +
+    coord_fixed(ratio = 1) +
+    theme_classic() +
     theme(
       plot.title = element_text(
-        hjust = 0.5,
-        color = gene_set_color,
-        face = "bold"
+        color = gene_set_color
       ),
-      legend.position = "none",
-      plot.margin = margin(5, 5, -5, 5)
+      legend.position = if (show_auc_legend) "bottom" else "none",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.background = element_rect(fill = "white", color = NA),
+      plot.margin = margin(1, 1, 1, 1, "pt")
     )
 
-  if (show_labels) {
-    p <- p + geom_label(
-      data = centroids,
-      aes(x = Centroid_x, y = Centroid_y, label = CellType),
-      size = 3.5,
-      fill = "white",
-      alpha = 0.85,
-      label.padding = unit(0.2, "lines"),
-      label.size = 0,
-      check_overlap = TRUE
-    )
+  if (!is.null(highlight_celltypes) && length(highlight_celltypes) > 0) {
+    for (celltype in highlight_celltypes) {
+      celltype_data <- plot_data[plot_data$CellType == celltype, ]
+      if (nrow(celltype_data) > 0) {
+        p <- p + stat_ellipse(
+          data = celltype_data,
+          aes(x = .data[[dim_labels[1]]], y = .data[[dim_labels[2]]]),
+          type = "t",
+          level = 0.98,
+          color = highlight_color,
+          linewidth = 0.6,
+          linetype = "3313",
+          inherit.aes = FALSE
+        )
+
+        celltype_centroid <- centroids[centroids$CellType == celltype, ]
+        if (nrow(celltype_centroid) > 0) {
+          x_data <- celltype_data[[dim_labels[1]]]
+          y_data <- celltype_data[[dim_labels[2]]]
+
+          x_center <- mean(x_data, na.rm = TRUE)
+          y_center <- mean(y_data, na.rm = TRUE)
+
+          cov_matrix <- cov(cbind(x_data, y_data), use = "complete.obs")
+          x_sd <- sqrt(cov_matrix[1, 1])
+          n <- length(x_data)
+          df <- n - 1
+          f_crit <- qf(0.98, 2, df)
+          scale_factor <- sqrt(f_crit * 2)
+          label_x <- x_center + scale_factor * x_sd
+          label_y <- y_center
+
+          p <- p + annotate(
+            "text",
+            x = label_x,
+            y = label_y,
+            label = celltype,
+            color = highlight_color,
+            size = 3.5,
+            hjust = 0,
+            vjust = 0.5
+          )
+        }
+      }
+    }
   }
 
   return(p)
@@ -98,7 +138,7 @@ plot_auc_dimred <- function(
 prepare_auc_data <- function(
     seurat,
     selected_thresholds,
-    color_palette_method) {
+    color_methods) {
   auc_data_list <- lapply(
     names(selected_thresholds),
     function(gene_set_name) {
@@ -111,7 +151,7 @@ prepare_auc_data <- function(
         GeneSet = gene_set_name,
         Method = method_name,
         AUC = as.numeric(unlist(seurat[[paste0("AUC_", gene_set_name)]])),
-        CellType = seurat$cell_name
+        CellType = seurat$CellType
       )
     }
   )
@@ -119,7 +159,7 @@ prepare_auc_data <- function(
 
   result$Method <- factor(
     result$Method,
-    levels = names(color_palette_method)
+    levels = names(color_methods)
   )
   result$GeneSet <- factor(
     result$GeneSet,
@@ -129,11 +169,10 @@ prepare_auc_data <- function(
   return(result)
 }
 
-
 threshold_proportion_data <- function(
     seurat,
     selected_thresholds,
-    color_palette_method) {
+    color_methods) {
   threshold_data <- lapply(
     names(selected_thresholds),
     function(gene_set_name) {
@@ -144,7 +183,7 @@ threshold_proportion_data <- function(
 
       col_name <- paste0("Pass_threshold_", gene_set_name)
       pass_threshold <- as.logical(unlist(seurat[[col_name]]))
-      cell_types <- seurat$cell_name
+      cell_types <- seurat$CellType
 
       result <- data.frame(
         GeneSet = gene_set_name,
@@ -152,7 +191,7 @@ threshold_proportion_data <- function(
         CellType = factor(cell_types),
         Status = factor(
           ifelse(
-            pass_threshold, "Above threshold", "Below threshold"
+            pass_threshold, "Above AUC threshold", "Below AUC threshold"
           )
         )
       )
@@ -171,115 +210,64 @@ threshold_proportion_data <- function(
 
   threshold_data$Method <- factor(
     threshold_data$Method,
-    levels = names(color_palette_method)
+    levels = names(color_methods)
   )
 
   return(threshold_data)
 }
 
-reduction_function <- function(
-    reduction_data,
-    selected_thresholds,
-    cells_auc,
-    threshold_offset) {
-  par(
-    mfrow = c(2, 4),
-    mar = c(2, 2, 2, 1),
-    cex.main = 1,
-    cex.lab = 1, cex.axis = 1
-  )
-  for (geneSetName in names(selected_thresholds)) {
-    n_breaks <- 1000
-    color_pal_neg <- colorRampPalette(
-      c("black", "blue", "skyblue")
-    )(n_breaks)
-    color_pal_pos <- colorRampPalette(
-      c("pink", "magenta", "red")
-    )(n_breaks)
-
-    pass_threshold <- getAUC(
-      cells_auc
-    )[geneSetName, ] > (selected_thresholds[geneSetName] - threshold_offset)
-    if (sum(pass_threshold) > 0) {
-      auc_split <- split(getAUC(cells_auc)[geneSetName, ], pass_threshold)
-
-      cell_color <- c(
-        setNames(
-          color_pal_neg[cut(auc_split[[1]], breaks = n_breaks)],
-          names(auc_split[[1]])
-        ),
-        setNames(
-          color_pal_pos[cut(auc_split[[2]], breaks = n_breaks)],
-          names(auc_split[[2]])
-        )
-      )
-
-      plot(
-        reduction_data,
-        main = geneSetName,
-        sub = "Pink/red cells pass the threshold",
-        col = cell_color[rownames(reduction_data)],
-        pch = 16
-      )
-    }
-  }
-}
-
 aucell_analysis <- function(
     seurat,
     gene_sets_list,
-    var_genes = NULL,
     random_sets = TRUE,
-    random_sizes = c(100, 200, 400),
+    random_sizes = c(100, 300),
     output_dir = "",
-    seed = 2024,
-    reductions = c("tsne", "umap"),
-    threshold_offset = 0.02,
+    seed = 2025,
+    reduction = "umap",
+    threshold_offset = 0,
+    use_adaptive_threshold = FALSE,
+    adaptive_quantile_base = 0.85,
+    adaptive_quantile_range = 0.15,
     point_size = 0.5,
-    color_palette_cluster = c(
-      "Astro" = "#005ea3",
-      "Endo" = "#24B700",
-      "Micro" = "#00C1AB",
-      "OPC" = "#00ACFC",
-      "ExN" = "#f0749d",
-      "InN" = "#c21b90",
-      "NPC" = "#e29828",
-      "Olig" = "#5865d3",
-      "Perc" = "#c08f09"
+    boxplot_y_range = TRUE,
+    color_celltypes = c(
+      "Radial glia" = "#8076A3",
+      "Neuroblasts" = "#ED5736",
+      "Excitatory neurons" = "#0AA344",
+      "Inhibitory neurons" = "#2177B8",
+      "Astrocytes" = "#D70440",
+      "Oligodendrocyte progenitor cells" = "#F9BD10",
+      "Oligodendrocytes" = "#B14B28",
+      "Microglia" = "#006D87",
+      "Endothelial cells" = "#5E7987"
     ),
-    color_palette_method = c(
-      "GENIE3" = "#cc3366",
-      "LEAP" = "#ff9900",
-      "PPCOR" = "#339999",
-      "HARNexus" = "#005ea3",
-      "GREAT" = "#00a323",
+    color_methods = c(
+      "GENIE3" = "#2177B8",
+      "HARNexus" = "#D70440",
+      "LEAP" = "#F9BD10",
+      "PPCOR" = "#0AA344",
+      "GREAT" = "#8076A3",
+      "TFs" = "#006D87",
+      "All" = "#ED5736",
       "Random (100)" = "#ee8484",
-      "Random (200)" = "#e34949",
-      "Random (400)" = "#d82a2a"
-    )) {
+      "Random (300)" = "#d83e2a"
+    ),
+    highlight_celltypes = NULL,
+    highlight_color = "#D70440",
+    width = 13,
+    height = 12) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
   set.seed(seed)
 
-  cell_counts <- table(seurat$cell_name)
+  cell_counts <- table(seurat$CellType)
   seurat$cluster_num <- paste0(
-    seurat$cell_name,
+    seurat$CellType,
     "\n(",
-    cell_counts[match(seurat$cell_name, names(cell_counts))],
+    cell_counts[match(seurat$CellType, names(cell_counts))],
     ")"
   )
-  color_palette_cluster_seurat <- setNames(
-    color_palette_cluster,
-    paste0(
-      names(color_palette_cluster),
-      "\n(",
-      cell_counts[names(color_palette_cluster)],
-      ")"
-    )
-  )
-  tsne_data <- seurat@reductions$tsne@cell.embeddings
-  umap_data <- seurat@reductions$umap@cell.embeddings
 
   expr_matrix <- as.matrix(
     GetAssayData(
@@ -287,10 +275,6 @@ aucell_analysis <- function(
       layer = "data"
     )
   )
-
-  if (is.null(var_genes)) {
-    var_genes <- VariableFeatures(seurat)
-  }
 
   gene_sets_collection <- list()
   for (name in names(gene_sets_list)) {
@@ -302,12 +286,21 @@ aucell_analysis <- function(
     )
   }
 
-  if (random_sets && !is.null(var_genes)) {
-    for (size in random_sizes) {
-      gene_sets_collection[[paste0("Random (", size, ")")]] <- GSEABase::GeneSet(
-        sample(var_genes, size),
-        setName = paste0("Random (", size, ")")
-      )
+  if (random_sets) {
+    all_genes <- NULL
+    if ("All" %in% names(gene_sets_list)) {
+      all_genes <- gene_sets_list[["All"]]
+      all_genes <- all_genes[all_genes %in% rownames(expr_matrix)]
+    }
+
+    if (!is.null(all_genes) && length(all_genes) > 0) {
+      for (size in random_sizes) {
+        actual_size <- min(size, length(all_genes))
+        gene_sets_collection[[paste0("Random (", size, ")")]] <- GSEABase::GeneSet(
+          sample(all_genes, actual_size),
+          setName = paste0("Random (", size, ")")
+        )
+      }
     }
   }
 
@@ -325,8 +318,8 @@ aucell_analysis <- function(
   )
 
   pdf(
-    file = paste0(output_dir, "/AUCell_hist_plots.pdf"),
-    width = 6.5,
+    file = file.path(output_dir, "hist_plots.pdf"),
+    width = 8,
     height = 3.5
   )
   par(
@@ -343,275 +336,175 @@ aucell_analysis <- function(
   )
   dev.off()
 
-  png(
-    file = paste0(output_dir, "/AUCell_hist_plots.png"),
-    width = 4000,
-    height = 4000 * 3.5 / 6.5,
-    res = 600
-  )
-  par(
-    mfrow = c(2, 4),
-    mar = c(2, 2, 2, 1),
-    cex.main = 1,
-    cex.lab = 1,
-    cex.axis = 1
-  )
-  cells_assignment <- AUCell::AUCell_exploreThresholds(
-    cells_auc,
-    plotHist = TRUE,
-    assignCells = TRUE
-  )
-  dev.off()
-
-
   selected_thresholds <- AUCell::getThresholdSelected(cells_assignment)
 
-  if ("tsne" %in% reductions) {
-    pdf(
-      file = file.path(output_dir, "AUCell_tsne.pdf"),
-      width = 6.5,
-      height = 3.5
-    )
-    reduction_function(
-      tsne_data,
-      selected_thresholds,
-      cells_auc,
-      threshold_offset
-    )
-    dev.off()
+  auc_data <- AUCell::getAUC(cells_auc)
 
-    png(
-      file = file.path(output_dir, "AUCell_tsne.png"),
-      width = 4000,
-      height = 4000 * 3.5 / 6.5,
-      res = 600
+  auc_stats <- lapply(names(selected_thresholds), function(geneSetName) {
+    auc_values <- as.numeric(auc_data[geneSetName, ])
+    list(
+      mean = mean(auc_values, na.rm = TRUE),
+      median = median(auc_values, na.rm = TRUE),
+      q90 = quantile(auc_values, 0.9, na.rm = TRUE)
     )
-    reduction_function(
-      tsne_data,
-      selected_thresholds,
-      cells_auc,
-      threshold_offset
-    )
-    dev.off()
+  })
+  names(auc_stats) <- names(selected_thresholds)
 
-    pdf(
-      file = file.path(output_dir, "AUCell_hist_tsne.pdf"),
-      width = 8,
-      height = 6
-    )
-    par(
-      mfrow = c(4, 6),
-      mar = c(2, 2, 2, 1),
-      cex.main = 1,
-      cex.lab = 1,
-      cex.axis = 1
-    )
-    AUCell_plotTSNE(
-      tSNE = tsne_data,
-      exprMat = expr_matrix,
-      cellsAUC = cells_auc,
-      thresholds = selected_thresholds,
-      reorderGeneSets = FALSE,
-      cex = 1,
-      alphaOn = 1,
-      alphaOff = 0.2,
-      borderColor = adjustcolor("black", alpha.f = 0),
-      offColor = "gray80",
-      plots = c("histogram", "binaryAUC", "AUC", "expression"),
-      exprCols = c("goldenrod1", "darkorange", "brown"),
-      asPNG = FALSE
-    )
-    dev.off()
+  adaptive_quantiles <- NULL
+  if (use_adaptive_threshold) {
+    all_means <- sapply(auc_stats, function(x) x$mean)
+    mean_min <- min(all_means, na.rm = TRUE)
+    mean_max <- max(all_means, na.rm = TRUE)
+    mean_range <- mean_max - mean_min
+
+    adaptive_quantiles <- numeric(length(selected_thresholds))
+    names(adaptive_quantiles) <- names(selected_thresholds)
+
+    for (geneSetName in names(selected_thresholds)) {
+      current_mean <- auc_stats[[geneSetName]]$mean
+
+      if (mean_range > 0) {
+        normalized_mean <- (current_mean - mean_min) / mean_range
+      } else {
+        normalized_mean <- 0.5
+      }
+      quantile_adjustment <- normalized_mean * adaptive_quantile_range
+      adaptive_quantile <- adaptive_quantile_base - quantile_adjustment
+
+      adaptive_quantile <- max(0.5, min(0.95, adaptive_quantile))
+      adaptive_quantiles[geneSetName] <- adaptive_quantile
+
+      auc_values <- as.numeric(auc_data[geneSetName, ])
+      selected_thresholds[geneSetName] <- quantile(
+        auc_values,
+        probs = adaptive_quantile,
+        na.rm = TRUE
+      )
+    }
   }
 
-  if ("umap" %in% reductions) {
-    pdf(
-      file = file.path(output_dir, "AUCell_umap.pdf"),
-      width = 6.5,
-      height = 3.5
-    )
-    reduction_function(
-      umap_data,
-      selected_thresholds,
-      cells_auc,
-      threshold_offset
-    )
-    dev.off()
+  threshold_summary <- data.frame(
+    GeneSet = character(),
+    ThresholdType = character(),
+    Threshold = numeric(),
+    AdaptiveQuantile = numeric(),
+    AUC_Mean = numeric(),
+    AUC_Median = numeric(),
+    AUC_Min = numeric(),
+    AUC_Max = numeric(),
+    AUC_Q25 = numeric(),
+    AUC_Q75 = numeric(),
+    AUC_Q90 = numeric(),
+    Cells_Above = integer(),
+    Cells_Total = integer(),
+    Proportion_Above = numeric(),
+    stringsAsFactors = FALSE
+  )
 
-    png(
-      file = file.path(output_dir, "AUCell_umap.png"),
-      width = 4000,
-      height = 4000 * 3.5 / 6.5,
-      res = 600
-    )
-    reduction_function(
-      umap_data,
-      selected_thresholds,
-      cells_auc,
-      threshold_offset
-    )
-    dev.off()
+  for (geneSetName in names(selected_thresholds)) {
+    auc_values <- as.numeric(auc_data[geneSetName, ])
+    base_threshold <- selected_thresholds[geneSetName]
+    adjusted_threshold <- base_threshold - threshold_offset
 
-    pdf(
-      file = file.path(output_dir, "AUCell_hist_umap.pdf"),
-      width = 8,
-      height = 6
+    pass_threshold <- auc_values > adjusted_threshold
+    n_above <- sum(pass_threshold, na.rm = TRUE)
+    n_total <- length(auc_values)
+
+    threshold_type <- if (use_adaptive_threshold) "Adaptive threshold" else "Automatic threshold"
+    adaptive_q <- if (use_adaptive_threshold && !is.null(adaptive_quantiles)) {
+      adaptive_quantiles[geneSetName]
+    } else {
+      NA
+    }
+
+    threshold_summary <- rbind(
+      threshold_summary,
+      data.frame(
+        GeneSet = geneSetName,
+        ThresholdType = threshold_type,
+        Threshold = base_threshold,
+        AdaptiveQuantile = adaptive_q,
+        AUC_Mean = mean(auc_values, na.rm = TRUE),
+        AUC_Median = median(auc_values, na.rm = TRUE),
+        AUC_Min = min(auc_values, na.rm = TRUE),
+        AUC_Max = max(auc_values, na.rm = TRUE),
+        AUC_Q25 = quantile(auc_values, 0.25, na.rm = TRUE),
+        AUC_Q75 = quantile(auc_values, 0.75, na.rm = TRUE),
+        AUC_Q90 = quantile(auc_values, 0.90, na.rm = TRUE),
+        Cells_Above = n_above,
+        Cells_Total = n_total,
+        Proportion_Above = n_above / n_total,
+        stringsAsFactors = FALSE
+      )
     )
-    par(
-      mfrow = c(4, 6),
-      mar = c(2, 2, 2, 1),
-      cex.main = 1,
-      cex.lab = 1,
-      cex.axis = 1
-    )
-    AUCell::AUCell_plotTSNE(
-      tSNE = umap_data,
-      exprMat = expr_matrix,
-      cellsAUC = cells_auc,
-      thresholds = selected_thresholds,
-      reorderGeneSets = FALSE,
-      cex = 1,
-      alphaOn = 1,
-      alphaOff = 0.2,
-      borderColor = adjustcolor("black", alpha.f = 0),
-      offColor = "gray80",
-      plots = c("histogram", "binaryAUC", "AUC", "expression"),
-      exprCols = c("goldenrod1", "darkorange", "brown"),
-      asPNG = FALSE
-    )
-    dev.off()
   }
 
-  auc_data <- getAUC(cells_auc)
+  for (geneSetName in names(selected_thresholds)) {
+    auc_values <- as.numeric(auc_data[geneSetName, ])
+    base_threshold <- selected_thresholds[geneSetName]
+    adjusted_threshold <- base_threshold - threshold_offset
+    pass_threshold <- auc_values > adjusted_threshold
+
+    cell_types <- seurat$CellType
+    cell_type_stats <- table(cell_types[pass_threshold])
+    cell_type_total <- table(cell_types)
+
+    cat(sprintf("\n[%s]\n", geneSetName))
+    for (ct in names(cell_type_total)) {
+      n_above <- ifelse(ct %in% names(cell_type_stats), cell_type_stats[ct], 0)
+      n_total <- cell_type_total[ct]
+      prop <- n_above / n_total * 100
+      cat(sprintf("  %s: %d / %d (%.2f%%)\n", ct, n_above, n_total, prop))
+    }
+  }
+  if (output_dir != "") {
+    write.csv(
+      threshold_summary,
+      file = file.path(output_dir, "threshold_summary.csv"),
+      row.names = FALSE
+    )
+  }
+
   for (geneSetName in names(selected_thresholds)) {
     seurat[[paste0("AUC_", geneSetName)]] <- auc_data[geneSetName, ]
     seurat[[paste0("Pass_threshold_", geneSetName)]] <-
       auc_data[geneSetName, ] > (selected_thresholds[geneSetName] - threshold_offset)
   }
 
-  for (reduction in reductions) {
-    auc_plots <- lapply(
-      names(selected_thresholds), function(gene_set_name) {
-        plot_auc_dimred(
-          seurat,
-          gene_set_name,
-          reduction = reduction,
-          show_labels = FALSE,
-          point_size = 0.5,
-          color_palette_method
-        )
-      }
-    )
-    names(auc_plots) <- names(selected_thresholds)
-
-    cluster_plot <- Seurat::DimPlot(
-      seurat,
-      cols = color_palette_cluster_seurat,
-      label = TRUE,
-      label.size = 3.5,
-      reduction = reduction,
-      group.by = "cluster_num"
-    ) +
-      theme(legend.position = "none") +
-      xlab(
-        paste0(
-          ifelse(reduction == "tsne", "tSNE_1", "UMAP_1")
-        )
-      ) +
-      ylab(
-        paste0(
-          ifelse(reduction == "tsne", "tSNE_2", "UMAP_2")
-        )
-      ) +
-      labs(title = "Cluster") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(hjust = 0.5, face = "bold"),
-        legend.position = "none"
-      )
-
-    combined_plots <- cluster_plot +
-      auc_plots[[1]] +
-      auc_plots[[2]] +
-      auc_plots[[3]] +
-      auc_plots[[4]] +
-      auc_plots[[5]] +
-      auc_plots[[6]] +
-      auc_plots[[7]] +
-      auc_plots[[8]] +
-      plot_layout(
-        ncol = 3,
-        nrow = 3
-      ) +
-      plot_annotation(
-        tag_levels = "a"
-      )
-
-    ggsave(
-      file.path(
-        output_dir,
-        paste0("AUCell_combined_", reduction, ".pdf")
-      ),
-      combined_plots,
-      width = 9.5,
-      height = 10
-    )
-
-    ggsave(
-      file.path(output_dir, paste0("AUCell_combined_", reduction, ".png")),
-      combined_plots & theme(text = element_text(family = "Times New Roman")),
-      width = 9.5,
-      height = 10,
-      dpi = 600
-    )
-    combined_plots_2 <- cluster_plot +
-      auc_plots[[1]] +
-      auc_plots[[2]] +
-      auc_plots[[3]] +
-      auc_plots[[4]] +
-      auc_plots[[5]] +
-      auc_plots[[6]] +
-      auc_plots[[7]] +
-      auc_plots[[8]] +
-      plot_layout(
-        ncol = 3,
-        nrow = 3
-      ) +
-      plot_annotation(
-        tag_levels = "a",
-        tag_prefix = "(",
-        tag_suffix = ")"
-      )
-    ggsave(
-      file.path(output_dir, paste0("AUCell_combined_", reduction, "_2.pdf")),
-      combined_plots_2,
-      width = 9.5,
-      height = 10
-    )
-
-    ggsave(
-      file.path(output_dir, paste0("AUCell_combined_", reduction, "_2.png")),
-      combined_plots_2 & theme(text = element_text(family = "Times New Roman")),
-      width = 9.5,
-      height = 10,
-      dpi = 600
-    )
-  }
-
   auc_stats_data <- prepare_auc_data(
     seurat,
     selected_thresholds,
-    color_palette_method
+    color_methods
   )
   threshold_data <- threshold_proportion_data(
     seurat,
     selected_thresholds,
-    color_palette_method
+    color_methods
   )
 
+  celltype_levels <- sort(as.character(unique(seurat$CellType)))
+  auc_stats_data$CellType <- factor(
+    as.character(auc_stats_data$CellType),
+    levels = celltype_levels
+  )
+  threshold_data$CellType <- factor(
+    as.character(threshold_data$CellType),
+    levels = celltype_levels
+  )
+
+  if (boxplot_y_range) {
+    y_axis_range <- range(auc_stats_data$AUC, na.rm = TRUE)
+    y_axis_range[1] <- max(0, y_axis_range[1] - 0.05)
+    y_axis_range[2] <- y_axis_range[2] + 0.05
+  } else {
+    y_axis_range <- NULL
+  }
+
   method_plots <- lapply(
-    levels(auc_stats_data$GeneSet),
-    function(gene_set_name) {
+    seq_along(levels(auc_stats_data$GeneSet)),
+    function(plot_idx) {
+      gene_set_name <- levels(auc_stats_data$GeneSet)[plot_idx]
+      is_top_row <- plot_idx <= 4
       method_name <- strsplit(gene_set_name, " ")[[1]][1]
       if (grepl("Random", method_name)) {
         method_name <- gene_set_name
@@ -620,27 +513,30 @@ aucell_analysis <- function(
       subset_data <- auc_stats_data[auc_stats_data$GeneSet == gene_set_name, ]
       subset_data <- subset_data %>%
         group_by(CellType) %>%
-        sample_frac(0.3) %>%
+        sample_frac(0.1) %>%
         ungroup()
 
       p_box <- ggplot(subset_data, aes(x = CellType, y = AUC)) +
         geom_boxplot(
           aes(fill = CellType),
-          width = 0.8,
+          width = 0.9,
           outlier.shape = NA
         ) +
         geom_jitter(
-          width = 0.25,
-          size = 0.3,
-          alpha = 0.4
+          width = 0.3,
+          size = 0.2,
+          alpha = 0.2
         ) +
         scale_fill_manual(
-          values = color_palette_cluster
+          values = color_celltypes,
+          guide = "none"
         ) +
         theme_bw() +
         theme(
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           legend.position = "none",
           plot.margin = margin(-5, 5, -5, 5)
         ) +
@@ -649,10 +545,59 @@ aucell_analysis <- function(
           y = "AUC"
         )
 
+      current_y_range <- if (boxplot_y_range && !is.null(y_axis_range)) {
+        y_axis_range
+      } else {
+        range(subset_data$AUC, na.rm = TRUE)
+      }
+
+      text_y <- NULL
+      if (!is.null(highlight_celltypes) && length(highlight_celltypes) > 0) {
+        highlight_data <- subset_data[subset_data$CellType %in% highlight_celltypes, ]
+        if (nrow(highlight_data) > 0) {
+          mean_auc <- mean(highlight_data$AUC, na.rm = TRUE)
+          celltype_levels <- levels(factor(subset_data$CellType))
+          highlight_positions <- which(celltype_levels %in% highlight_celltypes)
+
+          text_y <- current_y_range[2] * 0.9
+          p_box <- p_box + geom_hline(
+            yintercept = mean_auc,
+            color = highlight_color,
+            linetype = "dashed"
+          )
+
+          for (pos in highlight_positions) {
+            p_box <- p_box + annotate(
+              "text",
+              x = pos,
+              y = text_y,
+              label = sprintf("Mean AUC: %.3f", mean_auc),
+              color = highlight_color,
+              size = 3,
+              hjust = 0.5,
+              vjust = 0
+            )
+          }
+        }
+      }
+
+      if (boxplot_y_range) {
+        p_box <- p_box + scale_y_continuous(
+          limits = current_y_range,
+          expand = c(0, 0),
+          labels = function(x) ifelse(x == 0, "", x)
+        )
+      } else {
+        p_box <- p_box + scale_y_continuous(
+          expand = c(0, 0.05),
+          labels = function(x) ifelse(x == 0, "", x)
+        )
+      }
+
       method_data <- threshold_data[threshold_data$GeneSet == gene_set_name, ]
       method_data$Status <- factor(
         method_data$Status,
-        levels = c("Above threshold", "Below threshold")
+        levels = c("Above AUC threshold", "Below AUC threshold")
       )
 
       summary_data <- data.frame(
@@ -670,7 +615,7 @@ aucell_analysis <- function(
           total_counts$CellType
         )]
 
-        above_data <- method_data[method_data$Status == "Above threshold", ]
+        above_data <- method_data[method_data$Status == "Above AUC threshold", ]
         if (nrow(above_data) > 0) {
           above_counts <- aggregate(
             Count ~ CellType,
@@ -708,13 +653,14 @@ aucell_analysis <- function(
           aes(x = CellType, y = Proportion, fill = Status),
           stat = "identity",
           position = "stack",
-          width = 0.8
+          width = 0.9
         ) +
         scale_fill_manual(
           values = c(
-            "Above threshold" = "black",
-            "Below threshold" = "gray50"
-          )
+            "Above AUC threshold" = "black",
+            "Below AUC threshold" = "gray50"
+          ),
+          name = "Status"
         ) +
         geom_text(
           data = summary_data,
@@ -727,113 +673,168 @@ aucell_analysis <- function(
         ) +
         theme_bw() +
         theme(
-          axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "none",
+          axis.text.x = if (is_top_row) element_blank() else element_text(angle = 30, hjust = 1),
+          axis.ticks.x = if (is_top_row) element_blank() else element_line(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.position = "bottom",
           plot.margin = margin(-5, 5, 10, 5)
         ) +
-        labs(x = "Cell type", y = "Proportion")
+        labs(x = if (is_top_row) NULL else "Celltype", y = "Proportion")
 
       combined_plot <- p_box / p_threshold +
-        plot_layout(heights = c(2, 1)) &
+        plot_layout(heights = c(0.6, 0.4)) &
         theme(panel.spacing = unit(0, "mm"))
 
       return(combined_plot)
     }
   )
 
-  for (reduction in reductions) {
-    auc_plots <- lapply(
-      names(selected_thresholds), function(gene_set_name) {
-        plot_auc_dimred(
-          seurat,
-          gene_set_name,
-          reduction = reduction,
-          show_labels = TRUE,
-          point_size = 0.5,
-          color_palette_method
-        )
+  auc_plots <- lapply(
+    names(selected_thresholds), function(gene_set_name) {
+      method_name <- strsplit(gene_set_name, " ")[[1]][1]
+      if (grepl("Random", method_name)) {
+        method_name <- gene_set_name
       }
-    )
-    names(auc_plots) <- names(selected_thresholds)
+      show_auc_legend <- (method_name == "HARNexus")
 
-    final_plot_all <- auc_plots[[1]] +
-      auc_plots[[2]] +
-      auc_plots[[3]] +
-      auc_plots[[4]] +
-      method_plots[[1]] +
-      method_plots[[2]] +
-      method_plots[[3]] +
-      method_plots[[4]] +
-      auc_plots[[5]] +
-      auc_plots[[6]] +
-      auc_plots[[7]] +
-      auc_plots[[8]] +
-      method_plots[[5]] +
-      method_plots[[6]] +
-      method_plots[[7]] +
-      method_plots[[8]] +
-      plot_layout(
-        guides = "collect",
-        ncol = 4,
-        nrow = 4
-      ) & theme(
-      legend.position = "bottom"
-    )
-
-    ggsave(
-      file.path(output_dir, paste0("AUCell_stats_plots_", reduction, ".pdf")),
-      final_plot_all,
-      width = 12,
-      height = 12
-    )
-
-    ggsave(
-      file.path(output_dir, paste0("AUCell_stats_plots_", reduction, ".png")),
-      final_plot_all & theme(text = element_text(family = "Times New Roman")),
-      width = 12,
-      height = 12,
-      dpi = 600,
-      bg = "white"
-    )
-
-    final_plot_all_2 <- auc_plots[[1]] +
-      auc_plots[[2]] +
-      auc_plots[[3]] +
-      auc_plots[[4]] +
-      method_plots[[1]] +
-      method_plots[[2]] +
-      method_plots[[3]] +
-      method_plots[[4]] +
-      auc_plots[[5]] +
-      auc_plots[[6]] +
-      auc_plots[[7]] +
-      auc_plots[[8]] +
-      method_plots[[5]] +
-      method_plots[[6]] +
-      method_plots[[7]] +
-      method_plots[[8]] +
-      plot_layout(
-        guides = "collect",
-        ncol = 4,
-        nrow = 4
+      plot_auc_dimred(
+        seurat,
+        gene_set_name,
+        reduction = reduction,
+        point_size = 0.5,
+        color_methods = color_methods,
+        highlight_celltypes = highlight_celltypes,
+        highlight_color = highlight_color,
+        show_auc_legend = show_auc_legend
       )
+    }
+  )
+  names(auc_plots) <- names(selected_thresholds)
 
-    ggsave(
-      file.path(output_dir, paste0("AUCell_stats_plots_2_", reduction, ".pdf")),
-      final_plot_all_2,
-      width = 12,
-      height = 12
+  dim_coords <- as.data.frame(
+    seurat@reductions[[reduction]]@cell.embeddings
+  )
+  dim_labels <- c("UMAP_1", "UMAP_2")
+
+  celltype_plot_data <- data.frame(
+    Dim1 = dim_coords[, 1],
+    Dim2 = dim_coords[, 2],
+    CellType = seurat$CellType
+  )
+  colnames(celltype_plot_data)[1:2] <- dim_labels
+
+  celltype_umap_plot <- ggplot(
+    celltype_plot_data,
+    aes(x = .data[[dim_labels[1]]], y = .data[[dim_labels[2]]])
+  ) +
+    ggrastr::geom_point_rast(
+      aes(color = .data$CellType),
+      size = 0.5, raster.dpi = 300
+    ) +
+    scale_color_manual(values = color_celltypes, guide = "none") +
+    labs(
+      title = "Celltype",
+      x = dim_labels[1],
+      y = dim_labels[2],
+      color = "Celltype"
+    ) +
+    coord_fixed(ratio = 1) +
+    theme_classic() +
+    theme(
+      legend.position = "none",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(1, 1, 1, 1, "pt")
     )
 
-    ggsave(
-      file.path(output_dir, paste0("AUCell_stats_plots_2_", reduction, ".png")),
-      final_plot_all_2 & theme(text = element_text(family = "Times New Roman")),
-      width = 12,
-      height = 12,
-      dpi = 600,
-      bg = "white"
-    )
-  }
+  actual_celltypes <- unique(celltype_plot_data$CellType)
+  actual_celltypes <- actual_celltypes[!is.na(actual_celltypes)]
+  legend_colors <- color_celltypes[names(color_celltypes) %in% actual_celltypes]
+  legend_colors <- legend_colors[order(match(names(legend_colors), actual_celltypes))]
 
+  legend_labels <- names(legend_colors)
+  legend_labels[legend_labels == "Oligodendrocyte progenitor cells"] <- "Oligodendrocyte\nprogenitor cells"
+
+  legend_data <- data.frame(
+    CellType = factor(names(legend_colors), levels = names(legend_colors)),
+    CellTypeLabel = legend_labels,
+    x = 0.3,
+    y = seq_along(legend_colors)
+  )
+
+  legend_plot <- ggplot(legend_data, aes(x = x, y = y)) +
+    geom_point(
+      aes(color = CellType),
+      size = 4,
+      shape = 15
+    ) +
+    scale_color_manual(values = legend_colors, guide = "none") +
+    geom_text(
+      aes(label = CellTypeLabel),
+      x = 0.5,
+      hjust = 0,
+      vjust = 0.5,
+      size = 3.2
+    ) +
+    annotate(
+      "text",
+      x = 0.4,
+      y = length(legend_colors) + 0.8,
+      label = "Celltype",
+      hjust = 0,
+      vjust = 0,
+      size = 4
+    ) +
+    xlim(0.2, 2.5) +
+    ylim(0.5, length(legend_colors) + 1.2) +
+    theme_void() +
+    theme(
+      legend.position = "none",
+      plot.margin = margin(-5, 5, 10, 5)
+    )
+
+  # layout of 5 columns and 4 rows:
+  # first row:  [Cell type UMAP] + [UMAP1] + [UMAP2] + [UMAP3] + [UMAP4]
+  # second row: [Legend] +         [Stat1] + [Stat2] + [Stat3] + [Stat4]
+  # third row:  [UMAP5] +          [UMAP6] + [UMAP7] + [UMAP8] + [UMAP9]
+  # fourth row: [Stat5] +          [Stat6] + [Stat7] + [Stat8] + [Stat9]
+
+  final_plot_all <- celltype_umap_plot +
+    auc_plots[[1]] +
+    auc_plots[[2]] +
+    auc_plots[[3]] +
+    auc_plots[[4]] +
+    legend_plot +
+    method_plots[[1]] +
+    method_plots[[2]] +
+    method_plots[[3]] +
+    method_plots[[4]] +
+    auc_plots[[5]] +
+    auc_plots[[6]] +
+    auc_plots[[7]] +
+    auc_plots[[8]] +
+    auc_plots[[9]] +
+    method_plots[[5]] +
+    method_plots[[6]] +
+    method_plots[[7]] +
+    method_plots[[8]] +
+    method_plots[[9]] +
+    plot_layout(
+      guides = "collect",
+      ncol = 5,
+      nrow = 4
+    ) & theme(
+    legend.position = "bottom",
+    plot.margin = margin(1, 1, 1, 1, "pt")
+  ) &
+    guides(shape = "none", linetype = "none")
+
+  ggsave(
+    file.path(output_dir, "stats_plots.pdf"),
+    final_plot_all,
+    width = width,
+    height = height
+  )
   return(seurat)
 }

@@ -1,6 +1,3 @@
-rm(list = ls())
-gc()
-
 source("code/functions/prepare_env.R")
 
 res_dir <- check_dir("../../data/BrainData/processed/GSE202210/")

@@ -1,6 +1,3 @@
-rm(list = ls())
-gc()
-
 library(Seurat)
 library(thisutils)
 library(future)

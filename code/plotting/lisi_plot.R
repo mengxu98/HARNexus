@@ -1,10 +1,11 @@
 source("code/functions/prepare_env.R")
 
 data_dir <- "../../data/BrainData/integration/"
-fig_dir <- check_dir("results/figures/lisi")
+res_dir <- check_dir("results/lisi")
+fig_dir <- check_dir("figures/lisi")
 
-if (!file.exists(paste0(data_dir, "/lisi_results.rds"))) {
-  lisi_data <- readRDS(paste0(data_dir, "/lisi_data.rds"))
+if (!file.exists(file.path(res_dir, "lisi_results.rds"))) {
+  lisi_data <- readRDS(file.path(data_dir, "lisi_data.rds"))
   raw <- compute_lisi(
     X = lisi_data[["umap_raw"]],
     meta_data = lisi_data[["meta_data"]],
@@ -27,9 +28,9 @@ if (!file.exists(paste0(data_dir, "/lisi_results.rds"))) {
   )
   names(lisi_results) <- c("Raw", "Harmony", "RPCA")
 
-  saveRDS(lisi_results, file.path(fig_dir, "lisi_results.rds"))
+  saveRDS(lisi_results, file.path(res_dir, "lisi_results.rds"))
 } else {
-  lisi_results <- readRDS(file.path(fig_dir, "lisi_results.rds"))
+  lisi_results <- readRDS(file.path(res_dir, "lisi_results.rds"))
 }
 
 lisi_long <- tidyr::gather(
@@ -45,7 +46,6 @@ lisi_long$Method <- factor(
 p <- ggplot(lisi_long, aes(x = Method, y = LISI)) +
   geom_boxplot(
     aes(fill = Method),
-    # alpha = 0.7,
     width = 0.5,
     outlier.shape = NA
   ) +
@@ -71,6 +71,8 @@ p <- ggplot(lisi_long, aes(x = Method, y = LISI)) +
   theme_bw() +
   theme(
     legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5)
   )
 ggsave(
@@ -112,6 +114,8 @@ p2 <- ggplot(lisi_long_2, aes(x = Method, y = LISI)) +
   theme_bw() +
   theme(
     legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5)
   )
 ggsave(

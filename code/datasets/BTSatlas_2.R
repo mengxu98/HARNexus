@@ -1,8 +1,6 @@
 # paper: https://doi.org/10.1038/s12276-024-01328-6
 # data: https://zenodo.org/records/10939707
 
-rm(list = ls())
-gc()
 
 source("code/functions/prepare_env.R")
 

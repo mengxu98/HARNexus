@@ -3,6 +3,7 @@ packages <- c(
   "Biostrings",
   "BSgenome.Hsapiens.UCSC.hg38",
   "BSgenome.Ptroglodytes.UCSC.panTro5",
+  "edgeR",
   "JASPAR2024",
   "Metrics",
   "RColorBrewer",
@@ -25,6 +26,7 @@ packages <- c(
   "eulerr",
   "flextable",
   "forcats",
+  "jsonlite",
   "GENIE3",
   "ppcor",
   "GenomicRanges",
@@ -45,6 +47,7 @@ packages <- c(
   "inferCSN",
   "lightgbm",
   "lubridate",
+  "magick",
   "Matrix",
   "matrixStats",
   "mengxu98/LEAP",
@@ -56,6 +59,7 @@ packages <- c(
   "optparse",
   "org.Hs.eg.db",
   "patchwork",
+  "png",
   "purrr",
   "readr",
   "recipes",
@@ -86,7 +90,7 @@ if (!requireNamespace("thisutils", quietly = TRUE)) {
 
 log_message <- thisutils::log_message
 
-library(scop)
+suppressPackageStartupMessages(library(scop))
 
 load_packages <- function(
     packages,
@@ -128,6 +132,13 @@ colors32 <- color_sets$ChineseSet32
 colors128 <- color_sets$ChineseSet128
 colors2 <- c("gray80", "#15559A")
 
+color_methods <- c(
+  "GENIE3" = "#2177B8",
+  "HARNexus" = "#D70440",
+  "LEAP" = "#F9BD10",
+  "PPCOR" = "#0AA344"
+)
+
 colors9 <- c(
   "#8076A3",
   "#ED5736",
@@ -140,7 +151,7 @@ colors9 <- c(
   "#5E7987"
 )
 
-color_celltype <- c(
+color_celltypes <- c(
   "Radial glia" = "#8076A3",
   "Neuroblasts" = "#ED5736",
   "Excitatory neurons" = "#0AA344",
@@ -151,6 +162,15 @@ color_celltype <- c(
   "Microglia" = "#006D87",
   "Endothelial cells" = "#5E7987"
 )
+
+color_stages1 <- colorRampPalette(
+  c("#0AA344", "#006D87")
+)(7)
+color_stages2 <- colorRampPalette(
+  c("#2B73AF", "#003D74")
+)(8)
+color_stages <- c(color_stages1, color_stages2)
+names(color_stages) <- paste0("S", 1:15)
 
 marker_genes <- c(
   # Radial glia
@@ -172,3 +192,65 @@ marker_genes <- c(
   # Oligodendrocytes
   "MOG", "MAG", "CLDN11"
 )
+
+adjust_ggplot <- function(plot, label_offset = 0.05) {
+  plot <- plot + theme(
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+  gb <- ggplot_build(plot)
+
+  for (i in seq_along(gb$data)) {
+    if ("label" %in% names(gb$data[[i]]) && "y" %in% names(gb$data[[i]])) {
+      max_y <- max(gb$data[[i]]$y, na.rm = TRUE)
+      gb$data[[i]]$y <- gb$data[[i]]$y + max_y * label_offset
+    }
+  }
+
+  plot_gtable <- ggplot_gtable(gb)
+
+  remove_grid_grobs <- function(grob) {
+    if (inherits(grob, "gTree")) {
+      child_names <- names(grob$children)
+      grid_indices <- grep("grid|panel.grid", child_names, ignore.case = TRUE)
+      axis_lab_indices <- grep("axis|lab|title|text", child_names, ignore.case = TRUE)
+      grid_indices <- setdiff(grid_indices, axis_lab_indices)
+      if (length(grid_indices) > 0) {
+        grob$children[grid_indices] <- NULL
+      }
+      for (name in names(grob$children)) {
+        if (!grepl("axis|lab|title|text", name, ignore.case = TRUE)) {
+          grob$children[[name]] <- remove_grid_grobs(grob$children[[name]])
+        }
+      }
+    }
+    return(grob)
+  }
+
+  for (i in seq_along(plot_gtable$grobs)) {
+    plot_gtable$grobs[[i]] <- remove_grid_grobs(plot_gtable$grobs[[i]])
+  }
+
+  plot <- ggplotify::as.ggplot(plot_gtable)
+
+  return(plot)
+}
+
+preprocess_object <- function(objects) {
+  objects <- NormalizeData(objects)
+  objects <- FindVariableFeatures(objects)
+  objects <- ScaleData(objects)
+  objects <- RunPCA(objects)
+  objects <- RunUMAP(objects, dims = 1:10)
+  return(objects)
+}
+
+keywords <- unique(tolower(c(
+  "brain", "neuron", "neuronal", "synap", "nervous",
+  "axon", "dendrite", "glia", "glial", "cerebr",
+  "cognitive", "neurotransmit", "neural", "cortex", "hippocamp",
+  "spinal", "myelin", "neurogenesis", "behavior", "sensory",
+  "glutamatergic", "gabaergic", "dopaminergic", "serotonergic", "cholinergic",
+  "interneuron", "pyramidal", "radial glia", "oRG", "progenitor",
+  "neuroepithel", "ependymal", "schwann", "precursor"
+)))
+brain_pattern <- paste(keywords, collapse = "|")

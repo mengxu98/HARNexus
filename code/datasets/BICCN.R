@@ -1,7 +1,5 @@
 # data: https://brainscope.gersteinlab.org/
 
-rm(list = ls())
-gc()
 
 source("code/functions/prepare_env.R")
 

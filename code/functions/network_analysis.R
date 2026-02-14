@@ -204,7 +204,6 @@ create_layout_with_umap <- function(g, weights = NULL) {
     min_dist = 0.1
   )
 
-
   layout <- data.frame(
     x = umap_coords[, 1],
     y = umap_coords[, 2]

@@ -378,3 +378,56 @@ cleanup_temp_files() {
     find "$data_dir" -name "*.resume" -delete 2>/dev/null || true
     log_success "Cleanup completed"
 }
+
+check_command() {
+    if ! command -v $1 &> /dev/null; then
+        log_error "$1 is not installed. Please install it first."
+        exit 1
+    fi
+}
+
+run_r_script() {
+    local base_dir="$1"
+    local script_name="$2"
+    local description="$3"
+    local script_path="${base_dir}/${script_name}"
+    if [ ! -f "$script_path" ]; then
+        log_error "Script not found: $script_path"
+        exit 1
+    fi
+    if Rscript "$script_path"; then
+        log_success "$description completed"
+    else
+        log_error "$description failed"
+        exit 1
+    fi
+    echo ""
+}
+
+run_python_script() {
+    local base_dir="$1"
+    local script_name="$2"
+    local description="$3"
+    local run_from_script_dir="${4:-}"
+    local script_path="${base_dir}/${script_name}"
+    if [ ! -f "$script_path" ]; then
+        log_error "Script not found: $script_path"
+        exit 1
+    fi
+    if [ -n "$run_from_script_dir" ]; then
+        if (cd "$(dirname "$script_path")" && python3 "$(basename "$script_path")"); then
+            log_success "$description completed"
+        else
+            log_error "$description failed"
+            exit 1
+        fi
+    else
+        if python3 "$script_path"; then
+            log_success "$description completed"
+        else
+            log_error "$description failed"
+            exit 1
+        fi
+    fi
+    echo ""
+}
