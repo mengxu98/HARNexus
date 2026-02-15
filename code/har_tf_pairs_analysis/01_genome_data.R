@@ -3,12 +3,11 @@ source("code/functions/prepare_env.R")
 result_dir <- check_dir("results/har_tf")
 result_dir_human <- check_dir(file.path(result_dir, "human"))
 result_dir_chimp <- check_dir(file.path(result_dir, "chimp"))
-genome_data_path <- "data/genome"
 
 log_message("Starting HAR sequence extraction")
 
 hars <- read.csv(
-  file.path(genome_data_path, "HARs_PMID40011774.csv")
+  "data/genome/HARs_PMID40011774.csv"
 )
 col_names <- c("chrom", "start", "end", "har")
 har_human <- hars[, c(3, 4, 5, 2)]
@@ -19,13 +18,15 @@ colnames(har_chimp) <- col_names
 write.csv(
   har_human,
   file.path(result_dir_human, "har_coords.csv"),
-  row.names = FALSE
+  row.names = FALSE,
+  quote = FALSE
 )
 
 write.csv(
   har_chimp,
   file.path(result_dir_chimp, "har_coords.csv"),
-  row.names = FALSE
+  row.names = FALSE,
+  quote = FALSE
 )
 
 gr_human <- GRanges(

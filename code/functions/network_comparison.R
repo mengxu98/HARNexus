@@ -6,7 +6,9 @@ coverage_ratio <- function(
   all_target_genes <- unique(network_table[[2]])
   total_possible_genes <- length(all_target_genes)
 
-  log_message("{.pkg {method_name}} - Total target genes: {.val {total_possible_genes}}")
+  log_message(
+    "{.pkg {method_name}} - Total target genes: {.val {total_possible_genes}}"
+  )
 
   max_threshold <- nrow(network_table)
   thresholds <- seq(step_size, max_threshold, by = step_size)
@@ -209,19 +211,13 @@ create_split_data <- function(methods_order, values, break_points) {
     return(df)
   }
 
-  # 分类：小于等于 break_points[1] 为 small，大于 break_points[2] 为 big
-  # 中间值（在 break_points[1] 和 break_points[2] 之间）也归为 small
   df$type <- ifelse(df$Value > break_points[2], "big", "small")
 
-  # 对于 big 类型的数据，创建两个记录：
-  # 1. 在 small 面板中显示占位符（从 0 到 break_points[1]）
-  # 2. 在 big 面板中显示实际值（从 break_points[2] 到实际值）
   df_big <- filter(df, type == "big")
   if (nrow(df_big) > 0) {
     df_small_placeholder <- df_big %>%
       mutate(type = "small", Value = break_points[1], is_placeholder = TRUE)
     df$is_placeholder <- FALSE
-    # 合并数据：占位符 + 原始数据
     df_result <- bind_rows(df_small_placeholder, df)
   } else {
     df$is_placeholder <- FALSE

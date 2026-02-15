@@ -53,7 +53,6 @@ def _format_column_name(name):
     result = " ".join([parts[0].capitalize()] + rest)
     if result == "Direction":
         return "Directions"
-    # Keep "Hi-C" in "Number of Hi-C-validated target genes" (avoid hi-c–validated)
     if "hi-c" in result.lower() and "validated target genes" in result.lower():
         result = re.sub(r"\bhi-c\b", "Hi-C", result, flags=re.IGNORECASE)
     return result
@@ -352,16 +351,16 @@ def main():
     loaders = [
         (1, "HAR_TF_motif", load_sheet1),
         (2, "TFs_binding_score", load_sheet2),
-        (3, "HiC_HAR_gene", load_sheet3),
+        (3, "HiC_validated_target_genes", load_sheet3),
         (4, "GENIE3_astrocytes", load_sheet4),
         (5, "HARNexus_astrocytes", load_sheet5),
         (6, "LEAP_astrocytes", load_sheet6),
         (7, "PPCOR_astrocytes", load_sheet7),
         (8, "HAR_CSN_atlas_stats", load_sheet8),
-        (9, "species_networks_CSNs", load_sheet9),
-        (10, "evolution_trajectory", load_sheet10),
+        (9, "Species_CSNs", load_sheet9),
+        (10, "Evolution_of_target_genes", load_sheet10),
         (11, "Prefrontal_cortex_astrocytes", load_sheet11),
-        (12, "dynamic_target_genes", load_sheet12),
+        (12, "Dynamic_target_genes", load_sheet12),
     ]
 
     table_info = pd.DataFrame(

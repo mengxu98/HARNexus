@@ -7,6 +7,10 @@ log_message("Loading data...")
 network_list <- readRDS(
   "results/gse97942/astro_4methods_networks.rds"
 )
+plot_network_distribution(network_list$GENIE3)
+plot_network_distribution(network_list$HARNexus)
+plot_network_distribution(network_list$LEAP)
+plot_network_distribution(network_list$PPCOR)
 
 hic_data <- read.csv(
   "results/hic/HAR_gene_HiC_supported.csv",
