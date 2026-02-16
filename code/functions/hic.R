@@ -1014,7 +1014,9 @@ weight_ratio_plots <- function(
   }
 
   if (perform_go_enrichment) {
-    log_message(paste0("Performing GO ", go_ontology, " enrichment analysis..."))
+    log_message(
+      "Performing GO {.val {go_ontology}} enrichment analysis..."
+    )
 
     if (!is.null(tfdb_data) && !is.null(hic_data)) {
       tf_har_gene_map <- merge(

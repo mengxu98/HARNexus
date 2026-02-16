@@ -17,7 +17,11 @@ from functions.utils import (
     DEFAULT_NODE_COLOR,
     log_message,
 )
-from functions.utils_network import load_network_data, generate_colors
+from functions.utils_network import (
+    load_network_data,
+    load_har_tf_data,
+    generate_colors,
+)
 
 
 class InteractiveNetworkVisualizer:
@@ -79,8 +83,6 @@ class InteractiveNetworkVisualizer:
     def load_data(self):
         try:
             if self.har_tf_path:
-                from functions.utils_network import load_har_tf_data
-
                 self.har_tf_data = load_har_tf_data(self.har_tf_path)
             else:
                 log_message("No HAR-TF data provided.", message_type="info")
@@ -91,28 +93,34 @@ class InteractiveNetworkVisualizer:
                     f"Loading network data from {self.data_path}...",
                     message_type="info",
                 )
-                required_columns = [
-                    "TF",
-                    "Target",
-                    "Weight",
-                    "CellType",
-                    "Stage",
-                    "Region",
-                ]
-                try:
-                    self.network_data = pd.read_csv(
-                        self.data_path, usecols=required_columns
-                    )
-                except ValueError:
-                    self.network_data = pd.read_csv(self.data_path)
-                    for col in ["TF", "Target", "Weight"]:
-                        if col not in self.network_data.columns:
-                            raise ValueError(
-                                f"Required column '{col}' not found in data"
-                            )
-                    for col in ["Region", "Stage", "CellType"]:
-                        if col not in self.network_data.columns:
-                            self.network_data[col] = "Unknown"
+                self.network_data = pd.read_csv(self.data_path)
+                if "Weight" not in self.network_data.columns:
+                    if "weight" in self.network_data.columns:
+                        self.network_data = self.network_data.rename(
+                            columns={"weight": "Weight"}
+                        )
+                    else:
+                        raise ValueError("Weight column not found in data")
+                if "TF" not in self.network_data.columns:
+                    if "regulator" in self.network_data.columns:
+                        self.network_data = self.network_data.rename(
+                            columns={"regulator": "TF"}
+                        )
+                    else:
+                        raise ValueError("TF column not found in data")
+                if "Target" not in self.network_data.columns:
+                    if "target" in self.network_data.columns:
+                        self.network_data = self.network_data.rename(
+                            columns={"target": "Target"}
+                        )
+                    else:
+                        raise ValueError("Target column not found in data")
+                if "Stage" not in self.network_data.columns:
+                    self.network_data["Stage"] = "Unknown_Stage"
+                if "Region" not in self.network_data.columns:
+                    self.network_data["Region"] = "Unknown_Region"
+                if "CellType" not in self.network_data.columns:
+                    self.network_data["CellType"] = "Unknown_CellType"
             else:
                 self.network_data = load_network_data(
                     network_dir=self.network_dir,
@@ -127,19 +135,24 @@ class InteractiveNetworkVisualizer:
 
             log_message("Cleaning and optimizing data...", message_type="info")
 
-            self.network_data = self.network_data.fillna(
-                {
-                    "Weight": 0,
-                    "TF": "Unknown_TF",
-                    "Target": "Unknown_Target",
-                    "Stage": "Unknown_Stage",
-                    "Region": "Unknown_Region",
-                    "CellType": "Unknown_CellType",
-                }
+            self.network_data["Weight"] = self.network_data["Weight"].fillna(0)
+            self.network_data["TF"] = self.network_data["TF"].fillna("Unknown_TF")
+            self.network_data["Target"] = self.network_data["Target"].fillna(
+                "Unknown_Target"
             )
+            self.network_data["Stage"] = self.network_data["Stage"].fillna(
+                "Unknown_Stage"
+            )
+            self.network_data["Region"] = self.network_data["Region"].fillna(
+                "Unknown_Region"
+            )
+            self.network_data["CellType"] = self.network_data["CellType"].fillna(
+                "Unknown_CellType"
+            )
+            self.network_data = self.network_data.dropna(subset=["TF", "Target"])
 
             self.network_data = self.network_data[
-                (self.network_data["Weight"] != 0)
+                (self.network_data["Weight"] > 0)
                 & (self.network_data["TF"] != "Unknown_TF")
                 & (self.network_data["Target"] != "Unknown_Target")
             ].copy()
@@ -201,6 +214,7 @@ class InteractiveNetworkVisualizer:
         specific_stages: List[str] = None,
         specific_regions: List[str] = None,
         specific_celltypes: List[str] = None,
+        only_show_levels: Optional[List[str]] = None,
         height: int = 700,
         width: int = 1300,
         theme: str = "light",
@@ -208,47 +222,168 @@ class InteractiveNetworkVisualizer:
         flow_data = self.network_data.copy()
 
         if specific_celltypes:
-            flow_data = flow_data[flow_data["CellType"].isin(specific_celltypes)]
+            if isinstance(specific_celltypes, str):
+                flow_data = flow_data[flow_data["CellType"] == specific_celltypes]
+            else:
+                flow_data = flow_data[
+                    flow_data["CellType"].isin(specific_celltypes)
+                ]
         if specific_regions:
             flow_data = flow_data[flow_data["Region"].isin(specific_regions)]
         if specific_stages:
             flow_data = flow_data[flow_data["Stage"].isin(specific_stages)]
 
         if len(flow_data) == 0:
-            return None, "No data found for the specified filters"
+            return None, "No data found for the specified filters", [], []
+
+        def get_weighted_data(data, group_by_columns):
+            result = (
+                data.groupby(group_by_columns)["Weight"].sum().reset_index()
+            )
+            result["AbsWeight"] = result["Weight"].abs()
+            return result
+
+        priority_columns = []
+        if specific_celltypes:
+            priority_columns.append("CellType")
+        if specific_stages:
+            priority_columns.append("Stage")
+        if specific_regions:
+            priority_columns.append("Region")
 
         if specific_tfs:
             available_tfs = set(flow_data["TF"].unique())
             top_tfs = [tf for tf in specific_tfs if tf in available_tfs]
-        else:
-            top_tfs = self.get_top_nodes(
-                "tf",
-                top_n_tfs,
-                {
-                    "CellType": specific_celltypes,
-                    "Region": specific_regions,
-                    "Stage": specific_stages,
-                },
-            )
-
-        if specific_targets:
-            available_targets = set(flow_data["Target"].unique())
-            top_targets = [
-                target for target in specific_targets if target in available_targets
+            if not top_tfs:
+                return (
+                    None,
+                    "None of the specified TFs found in the data.",
+                    [],
+                    [],
+                )
+            if len(top_tfs) < len(specific_tfs):
+                missing = set(specific_tfs) - set(top_tfs)
+                log_message(
+                    f"Warning: Some specified TFs not found: {missing}",
+                    message_type="warning",
+                )
+        elif specific_targets:
+            target_data = flow_data[
+                flow_data["Target"].isin(specific_targets)
             ]
-        else:
-            top_targets = self.get_top_nodes(
-                "target",
-                top_n_targets,
-                {
-                    "CellType": specific_celltypes,
-                    "Region": specific_regions,
-                    "Stage": specific_stages,
-                },
+            if len(target_data) == 0:
+                return (
+                    None,
+                    "No specified target genes found in the data after filtering.",
+                    [],
+                    [],
+                )
+            tf_target_strength = (
+                target_data.groupby(["TF", "Target"])["Weight"]
+                .apply(lambda x: x.abs().sum())
+                .reset_index(name="AbsWeight")
             )
+            tf_strength = (
+                tf_target_strength.groupby("TF")["AbsWeight"]
+                .sum()
+                .sort_values(ascending=False)
+            )
+            targets_in_data = set(tf_target_strength["Target"].unique())
+            missing_targets = set(specific_targets) & targets_in_data
+            cover_map = (
+                tf_target_strength.groupby("TF")["Target"]
+                .agg(set)
+                .to_dict()
+            )
+            selected_tfs = []
+            selected_set = set()
+            effective_top_n_tfs = max(top_n_tfs, len(specific_targets))
+            while missing_targets and len(selected_tfs) < effective_top_n_tfs:
+                best_tf = None
+                best_cover_n = 0
+                best_strength = -1.0
+                for tf, covered in cover_map.items():
+                    if tf in selected_set:
+                        continue
+                    cover_n = len(covered & missing_targets)
+                    if cover_n == 0:
+                        continue
+                    strength = float(tf_strength.get(tf, 0.0))
+                    if (cover_n > best_cover_n) or (
+                        cover_n == best_cover_n and strength > best_strength
+                    ):
+                        best_tf = tf
+                        best_cover_n = cover_n
+                        best_strength = strength
+                if best_tf is None:
+                    break
+                selected_tfs.append(best_tf)
+                selected_set.add(best_tf)
+                missing_targets -= cover_map.get(best_tf, set())
+            top_tfs = list(selected_tfs)
+            if len(top_tfs) < top_n_tfs:
+                for tf in tf_strength.index.tolist():
+                    if tf not in selected_set:
+                        top_tfs.append(tf)
+                        selected_set.add(tf)
+                        if len(top_tfs) >= top_n_tfs:
+                            break
+        else:
+            if priority_columns:
+                group_cols = priority_columns + ["TF"]
+                weighted_data = get_weighted_data(flow_data, group_cols)
+                top_tfs = (
+                    weighted_data.groupby("TF")["AbsWeight"]
+                    .sum()
+                    .sort_values(ascending=False)
+                    .head(top_n_tfs)
+                    .index.tolist()
+                )
+            else:
+                top_tfs = (
+                    flow_data.groupby("TF")["Weight"]
+                    .apply(lambda x: x.abs().sum())
+                    .sort_values(ascending=False)
+                    .head(top_n_tfs)
+                    .index.tolist()
+                )
+
+        flow_data_filtered = flow_data[flow_data["TF"].isin(top_tfs)]
+        if specific_targets:
+            available_targets = set(flow_data_filtered["Target"].unique())
+            top_targets = [
+                t for t in specific_targets if t in available_targets
+            ]
+            if not top_targets:
+                return (
+                    None,
+                    "No specified target genes found for selected TFs.",
+                    [],
+                    [],
+                )
+        else:
+            if priority_columns:
+                group_cols = priority_columns + ["Target"]
+                weighted_data = get_weighted_data(flow_data_filtered, group_cols)
+                top_targets = (
+                    weighted_data.groupby("Target")["AbsWeight"]
+                    .sum()
+                    .sort_values(ascending=False)
+                    .head(top_n_targets)
+                    .index.tolist()
+                )
+            else:
+                top_targets = (
+                    flow_data_filtered.groupby("Target")["Weight"]
+                    .apply(lambda x: x.abs().sum())
+                    .sort_values(ascending=False)
+                    .head(top_n_targets)
+                    .index.tolist()
+                )
 
         flow_data = flow_data[
-            flow_data["TF"].isin(top_tfs) & flow_data["Target"].isin(top_targets)
+            flow_data["TF"].isin(top_tfs)
+            & flow_data["Target"].isin(top_targets)
         ].copy()
 
         if len(flow_data) == 0:
@@ -354,13 +489,39 @@ class InteractiveNetworkVisualizer:
         top_tfs = valid_tfs
         top_targets = valid_targets
 
+        only_show_levels = only_show_levels or []
+        stage_region_celltype = ["Stage", "Region", "CellType"]
+
+        def _level_entries(level_key, specific_vals, df_col, only_show_alt=None):
+            in_data = set(flow_data[df_col].unique())
+            only_show = level_key in only_show_levels or (
+                only_show_alt and only_show_alt in only_show_levels
+            )
+            if specific_vals and only_show:
+                normalized = (
+                    [specific_vals]
+                    if isinstance(specific_vals, str)
+                    else list(specific_vals)
+                )
+                return sorted(set(normalized) & in_data)
+            return sorted(in_data)
+
         levels_to_show = ["TF"]
         level_nodes = {
             "HAR": [],
             "TF": top_tfs,
-            "Stage": sorted(flow_data["Stage"].unique()),
-            "Region": sorted(flow_data["Region"].unique()),
-            "CellType": sorted(flow_data["CellType"].unique()),
+            "Stage": _level_entries(
+                "Stage", specific_stages, "Stage"
+            ),
+            "Region": _level_entries(
+                "Region", specific_regions, "Region"
+            ),
+            "CellType": _level_entries(
+                "CellType",
+                specific_celltypes,
+                "CellType",
+                "specific_celltypes",
+            ),
             "Target": top_targets,
         }
 
@@ -387,26 +548,39 @@ class InteractiveNetworkVisualizer:
 
             level_nodes["HAR"] = har_nodes
 
-        if not any([specific_celltypes, specific_stages, specific_regions]):
-            levels_to_show.extend(["Stage", "Region", "CellType"])
+        if not only_show_levels:
+            if not any([specific_celltypes, specific_stages, specific_regions]):
+                levels_to_show.extend(["Stage", "Region", "CellType"])
+            else:
+                if not specific_stages:
+                    levels_to_show.append("Stage")
+                if not specific_regions:
+                    levels_to_show.append("Region")
+                if not specific_celltypes:
+                    levels_to_show.append("CellType")
         else:
-            if not specific_stages:
-                levels_to_show.append("Stage")
-            if not specific_regions:
-                levels_to_show.append("Region")
-            if not specific_celltypes:
-                levels_to_show.append("CellType")
-
+            for L in stage_region_celltype:
+                if L in only_show_levels or (
+                    L == "CellType"
+                    and "specific_celltypes" in only_show_levels
+                ):
+                    levels_to_show.append(L)
         levels_to_show.append("Target")
 
         nodes = []
+        node_labels = []
         node_to_idx = {}
         current_idx = 0
+        italic_levels = {"TF", "Target"}
 
         for level in levels_to_show:
             level_nodes_list = level_nodes[level]
             for node in level_nodes_list if level_nodes_list else [None]:
                 nodes.append(node)
+                if level in italic_levels and node is not None:
+                    node_labels.append(f"<i>{node}</i>")
+                else:
+                    node_labels.append(node)
                 node_to_idx[node] = current_idx
                 current_idx += 1
 
@@ -452,7 +626,9 @@ class InteractiveNetworkVisualizer:
                         else:
                             mask = flow_data[next_level] == row[next_level]
                             if current_level != "HAR":
-                                mask &= flow_data[current_level] == row[current_level]
+                                mask &= (
+                                    flow_data[current_level] == row[current_level]
+                                )
                             path_tfs = flow_data[mask]["TF"].unique()
                             if len(path_tfs) > 0:
                                 tf_weights = {
@@ -525,15 +701,47 @@ class InteractiveNetworkVisualizer:
                     else:
                         node_colors.append(DEFAULT_NODE_COLOR)
 
+        SMALL_GAP = 0.055
+        LARGE_GAP = 0.13
+        small_gap_pairs = {("TF", "Stage"), ("Stage", "Region")}
+        level_x = [0.02]
+        for i in range(1, len(levels_to_show)):
+            prev, nxt = levels_to_show[i - 1], levels_to_show[i]
+            d = SMALL_GAP if (prev, nxt) in small_gap_pairs else LARGE_GAP
+            level_x.append(level_x[-1] + d)
+        total = level_x[-1] - level_x[0]
+        if total > 0:
+            level_x = [
+                0.02 + (x - level_x[0]) / total * 0.96 for x in level_x
+            ]
+        level_to_x = {
+            levels_to_show[i]: level_x[i] for i in range(len(levels_to_show))
+        }
+        node_x = []
+        node_y = []
+        y_lo, y_hi = 0.03, 0.97
+        for level in levels_to_show:
+            lst = level_nodes[level] if level_nodes[level] else [None]
+            n = len(lst)
+            x = level_to_x[level]
+            for j in range(n):
+                node_x.append(x)
+                node_y.append(
+                    y_lo + (j + 0.5) / max(n, 1) * (y_hi - y_lo)
+                )
+
         fig = go.Figure(
             data=[
                 go.Sankey(
+                    arrangement="fixed",
                     node=dict(
                         pad=15,
                         thickness=20,
                         line=dict(color="black", width=0.5),
-                        label=nodes,
+                        label=node_labels,
                         color=node_colors,
+                        x=node_x,
+                        y=node_y,
                     ),
                     link=dict(
                         source=sources,
@@ -545,26 +753,56 @@ class InteractiveNetworkVisualizer:
             ]
         )
 
-        title_parts = ["Network Wiring"]
+        title_parts = ["Network wiring"]
         if specific_celltypes:
-            title_parts.append(f"Cell Types: {', '.join(specific_celltypes)}")
+            ct_str = (
+                specific_celltypes
+                if isinstance(specific_celltypes, str)
+                else specific_celltypes[0]
+            )
+            title_parts.append(f"of {ct_str}")
         if specific_regions:
-            title_parts.append(f"Regions: {', '.join(specific_regions)}")
+            title_parts.append(f"in {', '.join(specific_regions)}")
         if specific_stages:
-            title_parts.append(f"Stages: {', '.join(specific_stages)}")
+            title_parts.append(f"at {', '.join(specific_stages)}")
+        title_text = " ".join(title_parts)
+        if specific_tfs:
+            title_text += f"<br>Selected TFs: {', '.join(top_tfs)}"
+        if specific_targets:
+            title_text += f"<br>Selected Targets: {', '.join(top_targets)}"
 
-        title_text = " | ".join(title_parts)
-
+        level_labels = {
+            "HAR": "HARs",
+            "CellType": "Celltypes",
+            "Stage": "Stages",
+            "Region": "Regions",
+            "TF": "TFs",
+            "Target": "Target genes",
+        }
         is_dark = theme == "dark" if theme else False
         template = "plotly_dark" if is_dark else "plotly_white"
         bg_color = "#121212" if is_dark else "#ffffff"
         text_color = "#ffffff" if is_dark else "#212529"
+        col_annotations = [
+            dict(
+                x=level_to_x[level],
+                y=0.03,
+                xref="x",
+                yref="paper",
+                text=level_labels.get(level, level),
+                showarrow=False,
+                yanchor="top",
+                xanchor="center",
+                font=dict(size=10, color=text_color, family="Arial"),
+            )
+            for level in levels_to_show
+        ]
 
         fig.update_layout(
             title=dict(
                 text=title_text,
                 x=0.1,
-                y=0.95,
+                y=0.9,
                 xanchor="left",
                 yanchor="top",
                 font=dict(size=14, color=text_color, family="Arial"),
@@ -575,8 +813,11 @@ class InteractiveNetworkVisualizer:
             template=template,
             paper_bgcolor=bg_color,
             plot_bgcolor=bg_color,
-            margin=dict(b=20, l=80, r=80, t=80),
+            margin=dict(b=52, l=80, r=80, t=80),
             autosize=False,
+            annotations=col_annotations,
+            xaxis=dict(visible=False, range=[0, 1]),
+            yaxis=dict(visible=False),
         )
 
         return fig, "Success", top_tfs, top_targets

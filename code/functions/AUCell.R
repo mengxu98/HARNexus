@@ -30,11 +30,7 @@ plot_auc_dimred <- function(
       Centroid_y = mean(Dim2)
     )
 
-  dim_labels <- if (reduction == "umap") {
-    c("UMAP_1", "UMAP_2")
-  } else {
-    c("t-SNE_1", "t-SNE_2")
-  }
+  dim_labels <- c("UMAP_1", "UMAP_2")
   colnames(plot_data)[1:2] <- dim_labels
 
   method_name <- strsplit(gene_set_name, " ")[[1]][1]
@@ -449,12 +445,10 @@ aucell_analysis <- function(
     cell_type_stats <- table(cell_types[pass_threshold])
     cell_type_total <- table(cell_types)
 
-    cat(sprintf("\n[%s]\n", geneSetName))
     for (ct in names(cell_type_total)) {
       n_above <- ifelse(ct %in% names(cell_type_stats), cell_type_stats[ct], 0)
       n_total <- cell_type_total[ct]
       prop <- n_above / n_total * 100
-      cat(sprintf("  %s: %d / %d (%.2f%%)\n", ct, n_above, n_total, prop))
     }
   }
   if (output_dir != "") {

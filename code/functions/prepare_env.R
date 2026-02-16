@@ -235,15 +235,6 @@ adjust_ggplot <- function(plot, label_offset = 0.05) {
   return(plot)
 }
 
-preprocess_object <- function(objects) {
-  objects <- NormalizeData(objects)
-  objects <- FindVariableFeatures(objects)
-  objects <- ScaleData(objects)
-  objects <- RunPCA(objects)
-  objects <- RunUMAP(objects, dims = 1:10)
-  return(objects)
-}
-
 keywords <- unique(tolower(c(
   "brain", "neuron", "neuronal", "synap", "nervous",
   "axon", "dendrite", "glia", "glial", "cerebr",
