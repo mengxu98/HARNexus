@@ -1,6 +1,7 @@
 """
 Network utility functions for Sankey diagram visualization
 """
+
 import pandas as pd
 from pathlib import Path
 from typing import List, Optional
@@ -24,7 +25,7 @@ def load_network_data(
 ):
     """
     Load network data intelligently, automatically selecting data files based on specified conditions.
-    
+
     Parameters:
     -----------
     network_dir : str
@@ -45,7 +46,7 @@ def load_network_data(
         HAR-TF mapping data
     file_path : str, optional
         Direct path to network data CSV file (if provided, will use this instead of smart loading)
-    
+
     Returns:
     --------
     pd.DataFrame : Loaded network data
@@ -57,22 +58,24 @@ def load_network_data(
     else:
         csv_dir = Path(network_dir) / "csv"
         all_data_path = Path(network_dir) / "network_data.csv"
-        
+
         # If specific Region, Stage, CellType combination is specified, try to read corresponding CSV files
         if regions and stages and celltypes:
             data_frames = []
             matched_files = []
-            
+
             for region in regions:
                 for stage in stages:
                     for celltype in celltypes:
                         # Build filename: {Region}_{Stage}_{CellType}.csv
                         filename = f"{region}_{stage}_{celltype}.csv"
                         file_path = csv_dir / filename
-                        
+
                         if file_path.exists():
                             try:
-                                log_message(f"Loading {filename}...", message_type="running")
+                                log_message(
+                                    f"Loading {filename}...", message_type="running"
+                                )
                                 df = pd.read_csv(file_path)
 
                                 # Handle column name differences: regulator -> TF, target -> Target, weight -> Weight
@@ -115,7 +118,9 @@ def load_network_data(
                 if all_data_path.exists():
                     combined_data = pd.read_csv(all_data_path)
                 else:
-                    raise FileNotFoundError(f"Main data file not found: {all_data_path}")
+                    raise FileNotFoundError(
+                        f"Main data file not found: {all_data_path}"
+                    )
         else:
             # If no complete conditions specified, read main data file
             log_message(
@@ -124,30 +129,32 @@ def load_network_data(
             if not all_data_path.exists():
                 raise FileNotFoundError(f"Main data file not found: {all_data_path}")
             combined_data = pd.read_csv(all_data_path)
-    
+
     # Ensure required columns exist
     required_columns = ["TF", "Target", "Weight"]
     optional_columns = ["Region", "Stage", "CellType"]
-    
+
     for col in required_columns:
         if col not in combined_data.columns:
             raise ValueError(f"Required column '{col}' not found in data")
-    
+
     # Add missing optional columns
     for col in optional_columns:
         if col not in combined_data.columns:
             combined_data[col] = "Unknown"
-    
+
     # Data cleaning
-    combined_data = combined_data.fillna({
-        "Weight": 0,
-        "TF": "Unknown_TF",
-        "Target": "Unknown_Target",
-        "Stage": "Unknown_Stage",
-        "Region": "Unknown_Region",
-        "CellType": "Unknown_CellType"
-    })
-    
+    combined_data = combined_data.fillna(
+        {
+            "Weight": 0,
+            "TF": "Unknown_TF",
+            "Target": "Unknown_Target",
+            "Stage": "Unknown_Stage",
+            "Region": "Unknown_Region",
+            "CellType": "Unknown_CellType",
+        }
+    )
+
     # Filter by HAR (if HARs and har_tf_data are provided)
     if hars and har_tf_data is not None:
         # Find TFs related to specified HARs
@@ -172,15 +179,17 @@ def load_network_data(
                 message_type="info",
             )
         else:
-            log_message(f"Filtered by Targets: {len(targets)} targets", message_type="info")
-    
+            log_message(
+                f"Filtered by Targets: {len(targets)} targets", message_type="info"
+            )
+
     # Filter invalid data
     combined_data = combined_data[
-        (combined_data["Weight"] != 0) &
-        (combined_data["TF"] != "Unknown_TF") &
-        (combined_data["Target"] != "Unknown_Target")
+        (combined_data["Weight"] != 0)
+        & (combined_data["TF"] != "Unknown_TF")
+        & (combined_data["Target"] != "Unknown_Target")
     ].copy()
-    
+
     # Optimize data types
     combined_data["Weight"] = combined_data["Weight"].astype("float32")
 
@@ -197,28 +206,28 @@ def load_har_tf_data(
 ):
     """
     Load HAR-TF combinations from CSV file
-    
+
     Parameters:
     -----------
     file_path : str, optional
         Path to HAR-TF CSV file. If None, uses default path:
         results/har_tf/human/har_tf_pairs_scores.csv
-    
+
     Returns:
     --------
     pd.DataFrame or None : HAR-TF mapping data, or None if file not found
     """
     if file_path is None:
         file_path = "results/har_tf/human/har_tf_pairs_scores.csv"
-    
+
     try:
         log_message(f"Loading HAR-TF data from {file_path}...", message_type="info")
         har_tf_data = pd.read_csv(file_path)
-        
+
         # Handle column names: ensure TF and HAR columns exist (column name might be lowercase har)
         if "HAR" not in har_tf_data.columns and "har" in har_tf_data.columns:
             har_tf_data = har_tf_data.rename(columns={"har": "HAR"})
-        
+
         # Keep only TF and HAR columns, and remove duplicates
         if "TF" in har_tf_data.columns and "HAR" in har_tf_data.columns:
             har_tf_data = har_tf_data[["TF", "HAR"]].drop_duplicates()
@@ -226,7 +235,7 @@ def load_har_tf_data(
             raise ValueError(
                 f"Required columns 'TF' and 'HAR' (or 'har') not found in {file_path}"
             )
-        
+
         log_message(
             f"HAR-TF data loaded successfully. Shape: {har_tf_data.shape}",
             message_type="success",
@@ -288,4 +297,3 @@ def generate_colors(n):
         colors.append(_hex_to_rgba(base_colors[color_idx], alpha))
 
     return colors
-

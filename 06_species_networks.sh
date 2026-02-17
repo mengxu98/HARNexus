@@ -27,6 +27,6 @@ run_r_script "code/species_networks" "05_atac_daccre.R" "DAcCRE analysis (Differ
 run_r_script "code/species_networks" "06_atac_peak2gene.R" "Peak-to-gene association"
 
 log_message "Stage 3: Evolution Analysis"
-run_r_script "code/species_networks" "07_daccre_evolution.R" "DAcCRE-based evolution analysis"
+run_python_script "code/species_networks" "07_daccre_evolution.py" "DAcCRE-based evolution analysis"
 
 log_success "All analysis completed!"
