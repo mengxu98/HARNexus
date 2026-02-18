@@ -307,9 +307,14 @@ def create_network_sankey(
             har_tf_details = []
 
             if har_tf_data is not None:
+                har_tf_filtered = har_tf_data[har_tf_data["TF"].isin(top_tfs)]
+                if specific_hars:
+                    har_tf_filtered = har_tf_filtered[
+                        har_tf_filtered["HAR"].isin(specific_hars)
+                    ]
+                
                 har_tf_groups = (
-                    har_tf_data[har_tf_data["TF"].isin(top_tfs)]
-                    .groupby("TF")["HAR"]
+                    har_tf_filtered.groupby("TF")["HAR"]
                     .agg(lambda x: sorted(x))
                     .reset_index()
                 )

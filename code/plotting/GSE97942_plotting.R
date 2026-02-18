@@ -114,7 +114,7 @@ gh <- GroupHeatmap(
 pdf(
   file.path(fig_dir, "group_heatmap_markergenes.pdf"),
   width = 10.5,
-  height = 5
+  height = 4.6
 )
 print(gh$plot)
 dev.off()

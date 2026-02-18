@@ -226,7 +226,9 @@ for (species in c("human", "chimp")) {
 
   stats_summary <- data.table(
     Level = rep(c("TF-HAR Pairs", "HARs", "TFs"), each = 5),
-    Method = rep(c("CIS_BP", "JASPAR", "HOCOMOCO", "hTFTarget", "Consensus"), 3),
+    Method = rep(
+      c("CIS_BP", "JASPAR", "HOCOMOCO", "hTFTarget", "Consensus"), 3
+    ),
     Count = c(
       length(cisbp_pairs),
       length(jaspar_pairs),
@@ -273,20 +275,5 @@ for (species in c("human", "chimp")) {
   saveRDS(
     venn_tfs_list,
     file.path(result_dir, "venn_tfs_sets.rds")
-  )
-
-
-  top_n <- 10
-
-  top_tfs <- head(consensus_all[, .N, by = TF][order(-N)], top_n)
-  fwrite(
-    top_tfs,
-    file.path(result_dir, paste0("top", top_n, "_tfs.csv"))
-  )
-
-  top_hars <- head(consensus_all[, .N, by = har][order(-N)], top_n)
-  fwrite(
-    top_hars,
-    file.path(result_dir, paste0("top", top_n, "_hars.csv"))
   )
 }

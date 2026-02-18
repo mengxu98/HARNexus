@@ -148,53 +148,6 @@ for (species in c("human", "chimp")) {
     venn_tfs_plot,
     width = 8, height = 8
   )
-
-  top_tfs <- fread(
-    file.path(result_dir, "top10_tfs.csv")
-  )
-  top_tfs[, TF := factor(TF, levels = rev(TF))]
-  p_top_tfs <- ggplot(top_tfs, aes(x = TF, y = N)) +
-    geom_col(fill = har_color, width = 0.5) +
-    geom_text(aes(label = N), hjust = -0.2, size = 3) +
-    coord_flip() +
-    labs(
-      title = "Top 10 TFs",
-      x = "TFs",
-      y = "Number of HARs"
-    ) +
-    theme_bw() +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank()
-    ) +
-    scale_y_continuous(expand = expansion(mult = c(0, 0.25)))
-
-  top_hars <- fread(
-    file.path(result_dir, "top10_hars.csv")
-  )
-  top_hars[, har := factor(har, levels = rev(har))]
-  p_top_hars <- ggplot(top_hars, aes(x = har, y = N)) +
-    geom_col(fill = tf_color, width = 0.5) +
-    geom_text(aes(label = N), hjust = -0.2, size = 3) +
-    coord_flip() +
-    labs(
-      title = "Top 10 HARs",
-      x = "HARs",
-      y = "Number of TFs"
-    ) +
-    theme_bw() +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank()
-    ) +
-    scale_y_continuous(expand = expansion(mult = c(0, 0.25)))
-
-  p_top <- p_top_hars + p_top_tfs + plot_layout(ncol = 2)
-  ggsave(
-    file.path(fig_dir, "top10_hars_tfs.pdf"),
-    p_top,
-    width = 5, height = 2.5
-  )
 }
 
 human_stats <- fread(

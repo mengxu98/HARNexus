@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import dash
@@ -7,10 +8,12 @@ import sys
 import os
 import io
 import base64
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 import networkx as nx
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 from functions.utils import (
     COLOR_CELLTYPES,
     COLOR_STAGES,
@@ -23,13 +26,24 @@ from functions.utils_network import (
     generate_colors,
 )
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
+
+def _resolve_path(path: Optional[str]) -> Optional[str]:
+    """Resolve path relative to project root if it is not absolute."""
+    if path is None or not path:
+        return path
+    if os.path.isabs(path):
+        return path
+    return os.path.join(PROJECT_ROOT, path)
+
 
 class InteractiveNetworkVisualizer:
     def __init__(
         self,
         data_path: Optional[str] = None,
         har_tf_path: Optional[str] = None,
-        network_dir: str = "results/networks/har_csn_atlas",
+        network_dir: str = "results/networks/analysis",
         regions: Optional[List[str]] = None,
         stages: Optional[List[str]] = None,
         celltypes: Optional[List[str]] = None,
@@ -47,7 +61,7 @@ class InteractiveNetworkVisualizer:
         har_tf_path : str, optional
             HAR-TF mapping file path
         network_dir : str
-            Data directory base path (default: results/networks/har_csn_atlas)
+            Data directory base path (default: results/networks/analysis)
         regions : List[str], optional
             List of specified brain regions
         stages : List[str], optional
@@ -61,13 +75,13 @@ class InteractiveNetworkVisualizer:
         hars : List[str], optional
             List of specified HARs (for filtering)
         """
-        self.data_path = data_path
-        self.har_tf_path = (
+        self.data_path = _resolve_path(data_path)
+        self.har_tf_path = _resolve_path(
             har_tf_path
             if har_tf_path is not None
             else "results/har_tf/human/har_tf_pairs_scores.csv"
         )
-        self.network_dir = network_dir
+        self.network_dir = _resolve_path(network_dir)
         self.filter_regions = regions
         self.filter_stages = stages
         self.filter_celltypes = celltypes
@@ -178,6 +192,9 @@ class InteractiveNetworkVisualizer:
             "har_tfs": sorted(self.har_tf_data["TF"].unique().tolist())
             if self.har_tf_data is not None
             else [],
+            "hars": sorted(self.har_tf_data["HAR"].unique().tolist())
+            if self.har_tf_data is not None
+            else [],
         }
 
     def get_top_nodes(self, node_type: str, top_n: int, filters: Dict[str, Any] = None):
@@ -208,26 +225,31 @@ class InteractiveNetworkVisualizer:
         self,
         show_har: bool = True,
         top_n_tfs: int = 10,
-        top_n_targets: int = 20,
+        top_n_targets: int = 10,
         specific_tfs: List[str] = None,
         specific_targets: List[str] = None,
         specific_stages: List[str] = None,
         specific_regions: List[str] = None,
         specific_celltypes: List[str] = None,
+        specific_hars: List[str] = None,
         only_show_levels: Optional[List[str]] = None,
         height: int = 700,
-        width: int = 1300,
+        width: int = 1200,
         theme: str = "light",
     ):
         flow_data = self.network_data.copy()
+
+        if specific_hars and self.har_tf_data is not None:
+            relevant_tfs = self.har_tf_data[
+                self.har_tf_data["HAR"].isin(specific_hars)
+            ]["TF"].unique()
+            flow_data = flow_data[flow_data["TF"].isin(relevant_tfs)]
 
         if specific_celltypes:
             if isinstance(specific_celltypes, str):
                 flow_data = flow_data[flow_data["CellType"] == specific_celltypes]
             else:
-                flow_data = flow_data[
-                    flow_data["CellType"].isin(specific_celltypes)
-                ]
+                flow_data = flow_data[flow_data["CellType"].isin(specific_celltypes)]
         if specific_regions:
             flow_data = flow_data[flow_data["Region"].isin(specific_regions)]
         if specific_stages:
@@ -237,9 +259,7 @@ class InteractiveNetworkVisualizer:
             return None, "No data found for the specified filters", [], []
 
         def get_weighted_data(data, group_by_columns):
-            result = (
-                data.groupby(group_by_columns)["Weight"].sum().reset_index()
-            )
+            result = data.groupby(group_by_columns)["Weight"].sum().reset_index()
             result["AbsWeight"] = result["Weight"].abs()
             return result
 
@@ -268,9 +288,7 @@ class InteractiveNetworkVisualizer:
                     message_type="warning",
                 )
         elif specific_targets:
-            target_data = flow_data[
-                flow_data["Target"].isin(specific_targets)
-            ]
+            target_data = flow_data[flow_data["Target"].isin(specific_targets)]
             if len(target_data) == 0:
                 return (
                     None,
@@ -290,11 +308,7 @@ class InteractiveNetworkVisualizer:
             )
             targets_in_data = set(tf_target_strength["Target"].unique())
             missing_targets = set(specific_targets) & targets_in_data
-            cover_map = (
-                tf_target_strength.groupby("TF")["Target"]
-                .agg(set)
-                .to_dict()
-            )
+            cover_map = tf_target_strength.groupby("TF")["Target"].agg(set).to_dict()
             selected_tfs = []
             selected_set = set()
             effective_top_n_tfs = max(top_n_tfs, len(specific_targets))
@@ -351,9 +365,7 @@ class InteractiveNetworkVisualizer:
         flow_data_filtered = flow_data[flow_data["TF"].isin(top_tfs)]
         if specific_targets:
             available_targets = set(flow_data_filtered["Target"].unique())
-            top_targets = [
-                t for t in specific_targets if t in available_targets
-            ]
+            top_targets = [t for t in specific_targets if t in available_targets]
             if not top_targets:
                 return (
                     None,
@@ -382,12 +394,18 @@ class InteractiveNetworkVisualizer:
                 )
 
         flow_data = flow_data[
-            flow_data["TF"].isin(top_tfs)
-            & flow_data["Target"].isin(top_targets)
+            flow_data["TF"].isin(top_tfs) & flow_data["Target"].isin(top_targets)
         ].copy()
 
         if len(flow_data) == 0:
             return None, "No connections found for selected nodes", [], []
+
+        def _should_show_level(specific_vals):
+            if specific_vals is None:
+                return True
+            if isinstance(specific_vals, str):
+                return False
+            return len(specific_vals) >= 2
 
         def _validate_and_filter_complete_paths(
             flow_data, top_tfs, top_targets, show_har, har_tf_data, levels_to_show
@@ -458,15 +476,18 @@ class InteractiveNetworkVisualizer:
         levels_to_show_preview = ["TF"]
         if show_har and self.har_tf_data is not None:
             levels_to_show_preview.insert(0, "HAR")
-        if not any([specific_celltypes, specific_stages, specific_regions]):
-            levels_to_show_preview.extend(["Stage", "Region", "CellType"])
-        else:
-            if not specific_stages:
-                levels_to_show_preview.append("Stage")
-            if not specific_regions:
-                levels_to_show_preview.append("Region")
-            if not specific_celltypes:
-                levels_to_show_preview.append("CellType")
+        if _should_show_level(specific_stages):
+            levels_to_show_preview.append("Stage")
+        elif not specific_stages:
+            levels_to_show_preview.append("Stage")
+        if _should_show_level(specific_regions):
+            levels_to_show_preview.append("Region")
+        elif not specific_regions:
+            levels_to_show_preview.append("Region")
+        if _should_show_level(specific_celltypes):
+            levels_to_show_preview.append("CellType")
+        elif not specific_celltypes:
+            levels_to_show_preview.append("CellType")
         levels_to_show_preview.append("Target")
 
         flow_data, valid_tfs, valid_targets = _validate_and_filter_complete_paths(
@@ -510,12 +531,8 @@ class InteractiveNetworkVisualizer:
         level_nodes = {
             "HAR": [],
             "TF": top_tfs,
-            "Stage": _level_entries(
-                "Stage", specific_stages, "Stage"
-            ),
-            "Region": _level_entries(
-                "Region", specific_regions, "Region"
-            ),
+            "Stage": _level_entries("Stage", specific_stages, "Stage"),
+            "Region": _level_entries("Region", specific_regions, "Region"),
             "CellType": _level_entries(
                 "CellType",
                 specific_celltypes,
@@ -529,9 +546,14 @@ class InteractiveNetworkVisualizer:
 
         if show_har and self.har_tf_data is not None:
             levels_to_show.insert(0, "HAR")
+            har_tf_filtered = self.har_tf_data[self.har_tf_data["TF"].isin(top_tfs)]
+            if specific_hars:
+                har_tf_filtered = har_tf_filtered[
+                    har_tf_filtered["HAR"].isin(specific_hars)
+                ]
+            
             har_tf_groups = (
-                self.har_tf_data[self.har_tf_data["TF"].isin(top_tfs)]
-                .groupby("TF")["HAR"]
+                har_tf_filtered.groupby("TF")["HAR"]
                 .agg(lambda x: sorted(x))
                 .reset_index()
             )
@@ -549,20 +571,22 @@ class InteractiveNetworkVisualizer:
             level_nodes["HAR"] = har_nodes
 
         if not only_show_levels:
-            if not any([specific_celltypes, specific_stages, specific_regions]):
-                levels_to_show.extend(["Stage", "Region", "CellType"])
-            else:
-                if not specific_stages:
-                    levels_to_show.append("Stage")
-                if not specific_regions:
-                    levels_to_show.append("Region")
-                if not specific_celltypes:
-                    levels_to_show.append("CellType")
+            if _should_show_level(specific_stages):
+                levels_to_show.append("Stage")
+            elif not specific_stages:
+                levels_to_show.append("Stage")
+            if _should_show_level(specific_regions):
+                levels_to_show.append("Region")
+            elif not specific_regions:
+                levels_to_show.append("Region")
+            if _should_show_level(specific_celltypes):
+                levels_to_show.append("CellType")
+            elif not specific_celltypes:
+                levels_to_show.append("CellType")
         else:
             for L in stage_region_celltype:
                 if L in only_show_levels or (
-                    L == "CellType"
-                    and "specific_celltypes" in only_show_levels
+                    L == "CellType" and "specific_celltypes" in only_show_levels
                 ):
                     levels_to_show.append(L)
         levels_to_show.append("Target")
@@ -626,9 +650,7 @@ class InteractiveNetworkVisualizer:
                         else:
                             mask = flow_data[next_level] == row[next_level]
                             if current_level != "HAR":
-                                mask &= (
-                                    flow_data[current_level] == row[current_level]
-                                )
+                                mask &= flow_data[current_level] == row[current_level]
                             path_tfs = flow_data[mask]["TF"].unique()
                             if len(path_tfs) > 0:
                                 tf_weights = {
@@ -669,9 +691,7 @@ class InteractiveNetworkVisualizer:
             elif level == "Stage":
                 for node in level_nodes_list if level_nodes_list else [None]:
                     if node is not None:
-                        node_colors.append(
-                            COLOR_STAGES.get(node, DEFAULT_NODE_COLOR)
-                        )
+                        node_colors.append(COLOR_STAGES.get(node, DEFAULT_NODE_COLOR))
                     else:
                         node_colors.append(DEFAULT_NODE_COLOR)
             elif level == "CellType":
@@ -711,12 +731,8 @@ class InteractiveNetworkVisualizer:
             level_x.append(level_x[-1] + d)
         total = level_x[-1] - level_x[0]
         if total > 0:
-            level_x = [
-                0.02 + (x - level_x[0]) / total * 0.96 for x in level_x
-            ]
-        level_to_x = {
-            levels_to_show[i]: level_x[i] for i in range(len(levels_to_show))
-        }
+            level_x = [0.02 + (x - level_x[0]) / total * 0.96 for x in level_x]
+        level_to_x = {levels_to_show[i]: level_x[i] for i in range(len(levels_to_show))}
         node_x = []
         node_y = []
         y_lo, y_hi = 0.03, 0.97
@@ -726,9 +742,7 @@ class InteractiveNetworkVisualizer:
             x = level_to_x[level]
             for j in range(n):
                 node_x.append(x)
-                node_y.append(
-                    y_lo + (j + 0.5) / max(n, 1) * (y_hi - y_lo)
-                )
+                node_y.append(y_lo + (j + 0.5) / max(n, 1) * (y_hi - y_lo))
 
         fig = go.Figure(
             data=[
@@ -773,7 +787,7 @@ class InteractiveNetworkVisualizer:
 
         level_labels = {
             "HAR": "HARs",
-            "CellType": "Celltypes",
+            "CellType": "Cell types",
             "Stage": "Stages",
             "Region": "Regions",
             "TF": "TFs",
@@ -1009,12 +1023,13 @@ class InteractiveNetworkVisualizer:
         self,
         show_har: bool = True,
         top_n_tfs: int = 10,
-        top_n_targets: int = 20,
+        top_n_targets: int = 10,
         specific_tfs: List[str] = None,
         specific_targets: List[str] = None,
         specific_stages: List[str] = None,
         specific_regions: List[str] = None,
         specific_celltypes: List[str] = None,
+        specific_hars: List[str] = None,
         output_format: str = "csv",
     ):
         """
@@ -1034,6 +1049,12 @@ class InteractiveNetworkVisualizer:
             & (self.network_data["TF"] != "Unknown_TF")
             & (self.network_data["Target"] != "Unknown_Target")
         ].copy()
+
+        if specific_hars and self.har_tf_data is not None:
+            relevant_tfs = self.har_tf_data[
+                self.har_tf_data["HAR"].isin(specific_hars)
+            ]["TF"].unique()
+            flow_data = flow_data[flow_data["TF"].isin(relevant_tfs)]
 
         if specific_celltypes:
             flow_data = flow_data[flow_data["CellType"].isin(specific_celltypes)]
@@ -1153,6 +1174,70 @@ class InteractiveNetworkVisualizer:
 
         return stats
 
+    def get_region_stage_metrics(
+        self,
+        specific_tfs: List[str] = None,
+        specific_targets: List[str] = None,
+        specific_stages: List[str] = None,
+        specific_regions: List[str] = None,
+        specific_celltypes: List[str] = None,
+        actual_tfs: List[str] = None,
+        actual_targets: List[str] = None,
+    ) -> pd.DataFrame:
+        """
+        Get Region x Stage aggregated counts (Edges, TFs, Genes) for current filters.
+        Returns DataFrame with columns Region, Stage, Edges_count, TFs_count, Genes_count.
+        """
+        flow_data = self.network_data[
+            (self.network_data["Weight"] > 0)
+            & (self.network_data["TF"] != "Unknown_TF")
+            & (self.network_data["Target"] != "Unknown_Target")
+        ].copy()
+        if specific_celltypes:
+            flow_data = flow_data[flow_data["CellType"].isin(specific_celltypes)]
+        if specific_regions:
+            flow_data = flow_data[flow_data["Region"].isin(specific_regions)]
+        if specific_stages:
+            flow_data = flow_data[flow_data["Stage"].isin(specific_stages)]
+        if actual_tfs:
+            flow_data = flow_data[flow_data["TF"].isin(actual_tfs)]
+        elif specific_tfs:
+            flow_data = flow_data[flow_data["TF"].isin(specific_tfs)]
+        if actual_targets:
+            flow_data = flow_data[flow_data["Target"].isin(actual_targets)]
+        elif specific_targets:
+            flow_data = flow_data[flow_data["Target"].isin(specific_targets)]
+
+        all_regions = sorted(flow_data["Region"].dropna().unique())
+        all_stages = sorted(
+            flow_data["Stage"].dropna().unique(),
+            key=_stage_order_key,
+        )
+        if not all_regions or not all_stages:
+            empty = pd.DataFrame(
+                columns=["Region", "Stage", "Edges_count", "TFs_count", "Genes_count"]
+            )
+            return empty
+
+        agg = (
+            flow_data.groupby(["Region", "Stage"])
+            .agg(
+                Edges_count=("Weight", "count"),
+                TFs_count=("TF", "nunique"),
+                Genes_count=("Target", "nunique"),
+            )
+            .reset_index()
+        )
+        full = pd.DataFrame(
+            [(r, s) for r in all_regions for s in all_stages],
+            columns=["Region", "Stage"],
+        )
+        merged = full.merge(agg, on=["Region", "Stage"], how="left")
+        merged["Edges_count"] = merged["Edges_count"].fillna(0).astype(int)
+        merged["TFs_count"] = merged["TFs_count"].fillna(0).astype(int)
+        merged["Genes_count"] = merged["Genes_count"].fillna(0).astype(int)
+        return merged
+
 
 def estimate_text_width(text: str, font_size: int = 10) -> float:
     """
@@ -1183,6 +1268,142 @@ def capitalize_first_word(text: str) -> str:
     if words:
         words[0] = words[0].capitalize()
     return " ".join(words)
+
+
+def _stage_order_key(s: str) -> float:
+    """Sort key for stage strings (e.g. S13 -> 13)."""
+    try:
+        return float(str(s).replace("S", ""))
+    except (ValueError, TypeError):
+        return float("inf")
+
+
+def load_network_statistics_csv(network_dir: str) -> Optional[pd.DataFrame]:
+    """Load network_statistics.csv from network_dir. Returns None if missing."""
+    path = os.path.join(network_dir, "network_statistics.csv")
+    if not os.path.isfile(path):
+        return None
+    df = pd.read_csv(path)
+    for col in (
+        "Region",
+        "Stage",
+        "Cell_type",
+        "Edges_count",
+        "TFs_count",
+        "Genes_count",
+    ):
+        if col not in df.columns:
+            return None
+    return df
+
+
+def build_single_region_stage_heatmap(
+    region_stage_df: pd.DataFrame,
+    metric: str,
+    title: str,
+    theme: str = "light",
+) -> go.Figure:
+    if region_stage_df is None or region_stage_df.empty:
+        empty = go.Figure()
+        empty.add_annotation(
+            text="No data",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        empty.update_layout(template="plotly_white", height=280, title=title)
+        return empty
+
+    all_regions = sorted(region_stage_df["Region"].dropna().unique())
+    all_stages = sorted(
+        region_stage_df["Stage"].dropna().unique(),
+        key=_stage_order_key,
+    )
+    if metric not in region_stage_df.columns:
+        metric = "Edges_count"
+    pivot = region_stage_df.pivot_table(
+        index="Region", columns="Stage", values=metric, aggfunc="first"
+    )
+    region_rev = list(reversed(all_regions))
+    pivot = pivot.reindex(index=region_rev, columns=all_stages)
+    z = pivot.values
+    if z.size == 0:
+        z = np.full((len(region_rev), len(all_stages)), np.nan)
+    else:
+        z = np.where(np.isnan(z) | (z == 0), np.nan, z)
+
+    non_zero = region_stage_df[region_stage_df[metric] > 0][metric]
+    if len(non_zero) > 0:
+        zmin, zmax = float(non_zero.min()), float(non_zero.max())
+    else:
+        zmin, zmax = 0.0, 1.0
+
+    n_regions = len(region_rev)
+    n_stages = len(all_stages)
+    margin_l = 50
+    margin_r = 38
+    margin_t = 24
+    margin_b = 50
+    max_plot_h = 420
+    max_plot_w = 380
+    plot_h = min(n_regions * 22, max_plot_h)
+    plot_w = min(n_stages * 28, max_plot_w)
+    fig_height = plot_h + margin_t + margin_b
+    fig_width = plot_w + margin_l + margin_r
+    fig_height = 550
+    fig_width = 550
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            x=all_stages,
+            y=region_rev,
+            z=z,
+            colorscale="Viridis",
+            zmin=zmin,
+            zmax=zmax,
+            hovertemplate="Region: %{y}<br>Stage: %{x}<br>%{z}<extra></extra>",
+            colorbar=dict(
+                len=0.35,
+                lenmode="fraction",
+                y=0.5,
+                yanchor="middle",
+                thickness=7,
+                outlinewidth=0,
+            ),
+        )
+    )
+    is_dark = theme == "dark"
+    template = "plotly_dark" if is_dark else "plotly_white"
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0,
+            xanchor="left",
+            font=dict(size=13),
+        ),
+        template=template,
+        height=fig_height,
+        width=fig_width,
+        margin=dict(l=margin_l, r=margin_r, t=margin_t, b=margin_b),
+        autosize=False,
+        showlegend=False,
+        xaxis=dict(
+            tickangle=270,
+            tickvals=list(range(n_stages)),
+            ticktext=all_stages,
+            title_text="Stage",
+            automargin=True,
+        ),
+        yaxis=dict(
+            autorange="reversed",
+            tickvals=list(range(n_regions)),
+            ticktext=region_rev,
+            title_text="Brain region",
+        ),
+    )
+    return fig
 
 
 def parse_text_input(text: str) -> List[str]:
@@ -1355,22 +1576,96 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                     letter-spacing: -0.5px;
                 }
                 
-                .theme-switch-container {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    background: var(--card-bg);
-                    padding: 10px 15px;
-                    border-radius: 25px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
+                .page-title {
+                    font-size: 1.35rem;
                 }
                 
-                [data-theme="dark"] .theme-switch-container {
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                .theme-switch-container {
+                    display: inline-flex;
+                    align-items: center;
+                }
+                
+                .theme-switch-container .dropdown-toggle {
+                    padding: 0;
+                    border: none !important;
+                    background: none !important;
+                    box-shadow: none !important;
+                    text-decoration: none !important;
+                }
+                
+                .theme-switch-container .dropdown-toggle:hover,
+                .theme-switch-container .dropdown-toggle:focus {
+                    text-decoration: none !important;
+                }
+                
+                .theme-switch-container .dropdown-toggle::after {
+                    display: none !important;
+                }
+                
+                .theme-icon-symbol {
+                    font-size: 1.15em;
+                    opacity: 0.9;
+                }
+                
+                .theme-switch-container .dropdown-menu {
+                    min-width: 120px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(0,0,0,0.08);
+                    padding: 4px 0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                }
+                
+                .network-statistics-card-header {
+                    padding: 0.35rem 1rem;
+                }
+                
+                .network-stats-heatmap .js-plotly-plot,
+                .network-stats-heatmap .plotly {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                
+                .network-stats-heatmap .svg-container {
+                    margin: 0 !important;
+                }
+                
+                .network-stats-heatmaps-row > [class*="col-"] {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+                
+                .network-stats-heatmaps-row .network-stats-heatmap {
+                    margin-left: -2px;
+                    margin-right: -2px;
+                }
+                
+                .network-stats-heatmaps-row .js-plotly-plot {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                }
+                
+                .theme-switch-container .dropdown-item {
+                    padding: 8px 14px;
+                    font-size: 14px;
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .theme-switch-container .dropdown-item.active {
+                    background-color: #0d6efd;
+                    color: #fff;
+                }
+                
+                .theme-switch-container .dropdown-item:not(.active):hover {
+                    background-color: rgba(0,0,0,0.05);
+                }
+                
+                [data-theme="dark"] .theme-switch-container .dropdown-menu {
+                    border-color: var(--card-border);
+                }
+                
+                [data-theme="dark"] .theme-switch-container .dropdown-item:not(.active):hover {
+                    background-color: var(--card-border);
                 }
                 
                 /* Dash Dropdown styles for dark mode */
@@ -1506,41 +1801,84 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         [
             dcc.Store(id="page-load", data=True),
             dcc.Store(id="theme-store", data="light"),
+            dcc.Store(id="theme-mode-store", data="light"),
+            dcc.Interval(id="theme-interval", interval=60 * 1000, n_intervals=0),
             html.Div(id="_dummy-output", style={"display": "none"}),
-            html.Div(
-                [
-                    html.Span(
-                        "☀️",
-                        id="theme-icon",
-                        style={"fontSize": "18px", "userSelect": "none"},
-                    ),
-                    dbc.Switch(
-                        id="theme-switch",
-                        value=False,
-                        className="mb-0",
-                    ),
-                    html.Span(
-                        "🌙",
-                        id="theme-icon-right",
-                        style={
-                            "fontSize": "18px",
-                            "userSelect": "none",
-                            "opacity": "0.3",
-                        },
-                    ),
-                ],
-                className="theme-switch-container",
-            ),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.H1(
-                                capitalize_first_word(
-                                    "Interactive network visualization"
-                                ),
-                                className="text-center mb-4",
-                                style={"marginTop": "35px"},
+                            html.Div(
+                                [
+                                    html.H1(
+                                        capitalize_first_word(
+                                            "Interactive network visualization"
+                                        ),
+                                        className="mb-0 page-title",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dbc.DropdownMenu(
+                                                [
+                                                    dbc.DropdownMenuItem(
+                                                        [
+                                                            html.Span(
+                                                                "⊙",
+                                                                className="me-2 theme-icon-symbol",
+                                                            ),
+                                                            "Light",
+                                                        ],
+                                                        id="theme-opt-light",
+                                                    ),
+                                                    dbc.DropdownMenuItem(
+                                                        [
+                                                            html.Span(
+                                                                "◑",
+                                                                className="me-2 theme-icon-symbol",
+                                                            ),
+                                                            "Dark",
+                                                        ],
+                                                        id="theme-opt-dark",
+                                                    ),
+                                                    dbc.DropdownMenuItem(
+                                                        [
+                                                            html.Span(
+                                                                "◐",
+                                                                className="me-2 theme-icon-symbol",
+                                                            ),
+                                                            "Auto",
+                                                        ],
+                                                        id="theme-opt-auto",
+                                                    ),
+                                                ],
+                                                label=html.Div(
+                                                    id="theme-dropdown-label",
+                                                    children="⊙",
+                                                    style={
+                                                        "cursor": "pointer",
+                                                        "userSelect": "none",
+                                                        "fontSize": "1.4rem",
+                                                        "lineHeight": "1",
+                                                        "verticalAlign": "baseline",
+                                                    },
+                                                ),
+                                                id="theme-dropdown",
+                                                color="link",
+                                                className="p-0 border-0",
+                                                style={"verticalAlign": "baseline"},
+                                                menu_variant="light",
+                                                align_end=True,
+                                            ),
+                                        ],
+                                        className="theme-switch-container",
+                                        style={
+                                            "marginLeft": "auto",
+                                            "alignSelf": "center",
+                                        },
+                                    ),
+                                ],
+                                className="d-flex flex-nowrap align-items-baseline justify-content-between mb-2",
+                                style={"marginTop": "8px"},
                             ),
                             html.Hr(),
                         ]
@@ -1588,7 +1926,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                                                             dbc.Input(
                                                                 id="top-n-targets",
                                                                 type="number",
-                                                                value=20,
+                                                                value=10,
                                                                 min=1,
                                                                 max=100,
                                                                 className="mb-3",
@@ -1628,7 +1966,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                                                             dbc.Input(
                                                                 id="chart-width",
                                                                 type="number",
-                                                                value=1300,
+                                                                value=1200,
                                                                 min=300,
                                                                 max=2000,
                                                                 className="mb-3",
@@ -1840,6 +2178,37 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                                                 [
                                                     dbc.Col(
                                                         [
+                                                            dbc.Label(
+                                                                capitalize_first_word(
+                                                                    "Specific HARs:"
+                                                                )
+                                                            ),
+                                                            dcc.Dropdown(
+                                                                id="har-dropdown",
+                                                                options=[
+                                                                    {
+                                                                        "label": har,
+                                                                        "value": har,
+                                                                    }
+                                                                    for har in options[
+                                                                        "hars"
+                                                                    ]
+                                                                ]
+                                                                if options.get("hars")
+                                                                else [],
+                                                                multi=True,
+                                                                placeholder="Select specific HARs...",
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                    ),
+                                                ],
+                                                className="mt-3",
+                                            ),
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
                                                             dbc.Button(
                                                                 capitalize_first_word(
                                                                     "Generate sankey"
@@ -1881,7 +2250,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                                         [
                                             html.Span(
                                                 capitalize_first_word(
-                                                    "Network visualization"
+                                                    "Network sankey visualization"
                                                 ),
                                                 style={"flex": "1"},
                                             ),
@@ -1968,16 +2337,78 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                             dbc.Card(
                                 [
                                     dbc.CardHeader(
-                                        capitalize_first_word("Network statistics")
+                                        capitalize_first_word("Network statistics"),
+                                        className="network-statistics-card-header",
                                     ),
-                                    dbc.CardBody([html.Div(id="network-stats")]),
+                                    dbc.CardBody(
+                                        [
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            dcc.Graph(
+                                                                id="heatmap-edges",
+                                                                config={
+                                                                    "responsive": False,
+                                                                    "displayModeBar": False,
+                                                                },
+                                                                style={"width": "100%"},
+                                                                className="network-stats-heatmap",
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                        md=4,
+                                                        className="pe-0",
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dcc.Graph(
+                                                                id="heatmap-tfs",
+                                                                config={
+                                                                    "responsive": False,
+                                                                    "displayModeBar": False,
+                                                                },
+                                                                style={"width": "100%"},
+                                                                className="network-stats-heatmap",
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                        md=4,
+                                                        className="ps-0 pe-0",
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dcc.Graph(
+                                                                id="heatmap-genes",
+                                                                config={
+                                                                    "responsive": False,
+                                                                    "displayModeBar": False,
+                                                                },
+                                                                style={"width": "100%"},
+                                                                className="network-stats-heatmap",
+                                                            ),
+                                                        ],
+                                                        width=12,
+                                                        md=4,
+                                                        className="ps-0",
+                                                    ),
+                                                ],
+                                                className="mb-3 g-0 network-stats-heatmaps-row",
+                                            ),
+                                            html.Div(id="network-stats"),
+                                        ],
+                                        style={
+                                            "paddingTop": "0.25rem",
+                                            "paddingBottom": "0.25rem",
+                                        },
+                                    ),
                                 ]
                             )
                         ],
                         width=12,
                     )
                 ],
-                className="mt-4",
+                className="mt-3",
             ),
         ],
         fluid=True,
@@ -1989,6 +2420,9 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             Output("sankey-plot", "style"),
             Output("click-info", "children"),
             Output("network-stats", "children"),
+            Output("heatmap-edges", "figure"),
+            Output("heatmap-tfs", "figure"),
+            Output("heatmap-genes", "figure"),
         ],
         [Input("generate-button", "n_clicks"), Input("page-load", "data")],
         [
@@ -2002,6 +2436,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             State("tf-text-input", "value"),
             State("target-dropdown", "value"),
             State("target-text-input", "value"),
+            State("har-dropdown", "value"),
             State("chart-height", "value"),
             State("chart-width", "value"),
             State("theme-store", "data"),
@@ -2020,6 +2455,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         tfs_text,
         targets_dropdown,
         targets_text,
+        hars,
         height,
         width,
         theme,
@@ -2031,13 +2467,21 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             if top_n_tfs is None:
                 top_n_tfs = 10
             if top_n_targets is None:
-                top_n_targets = 20
+                top_n_targets = 10
             if height is None:
                 height = 700
             if width is None:
-                width = 1300
+                width = 1200
         elif n_clicks is None:
-            return go.Figure(), "", ""
+            return (
+                go.Figure(),
+                {"width": "100%", "minWidth": "0"},
+                "",
+                "",
+                go.Figure(),
+                go.Figure(),
+                go.Figure(),
+            )
 
         tfs_text_list = parse_text_input(tfs_text) if tfs_text else []
         tfs = merge_lists(tfs_dropdown, tfs_text_list)
@@ -2054,6 +2498,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             specific_stages=stages,
             specific_regions=regions,
             specific_celltypes=celltypes,
+            specific_hars=hars if hars else None,
             height=height,
             width=width,
             theme=theme if theme else "light",
@@ -2074,6 +2519,9 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 {"width": "100%", "minWidth": "0"},
                 dbc.Alert(message, color="warning"),
                 "",
+                go.Figure(),
+                go.Figure(),
+                go.Figure(),
             )
 
         stats = visualizer.get_network_statistics(
@@ -2161,7 +2609,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 title=capitalize_first_word("Top TFs by weight"),
                 height=400,
                 xaxis_title="Weight",
-                yaxis_title="TF",
+                yaxis_title="TFs",
                 showlegend=False,
                 template=template,
                 paper_bgcolor=paper_color,
@@ -2210,10 +2658,10 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 )
             )
             top_targets_fig.update_layout(
-                title=capitalize_first_word("Top targets by weight"),
+                title=capitalize_first_word("Top target genes by weight"),
                 height=400,
                 xaxis_title="Weight",
-                yaxis_title="Target",
+                yaxis_title="Target genes",
                 showlegend=False,
                 template=template,
                 paper_bgcolor=paper_color,
@@ -2226,7 +2674,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         else:
             top_targets_fig = go.Figure()
             top_targets_fig.add_annotation(
-                text="No targets available",
+                text="No target genes available",
                 xref="paper",
                 yref="paper",
                 x=0.5,
@@ -2253,6 +2701,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                         md=4,
                         lg=4,
                         xl=4,
+                        className="pe-0",
                     ),
                     dbc.Col(
                         [
@@ -2262,6 +2711,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                         md=4,
                         lg=4,
                         xl=4,
+                        className="ps-0 pe-0",
                     ),
                     dbc.Col(
                         [
@@ -2271,9 +2721,10 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                         md=4,
                         lg=4,
                         xl=4,
+                        className="ps-0",
                     ),
                 ],
-                className="mb-3",
+                className="mb-3 g-0",
             ),
         ]
 
@@ -2303,11 +2754,40 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             "height": f"{chart_height}px",
         }
 
+        region_stage_df = visualizer.get_region_stage_metrics(
+            specific_tfs=tfs if tfs else None,
+            specific_targets=targets if targets else None,
+            specific_stages=stages,
+            specific_regions=regions,
+            specific_celltypes=celltypes,
+            actual_tfs=actual_tfs,
+            actual_targets=actual_targets,
+        )
+        theme_val = theme if theme else "light"
+        heatmap_edges = build_single_region_stage_heatmap(
+            region_stage_df,
+            "Edges_count",
+            "Edge counts",
+            theme_val,
+        )
+        heatmap_tfs = build_single_region_stage_heatmap(
+            region_stage_df, "TFs_count", "TF counts", theme_val
+        )
+        heatmap_genes = build_single_region_stage_heatmap(
+            region_stage_df,
+            "Genes_count",
+            "Target gene counts",
+            theme_val,
+        )
+
         return (
             fig,
             graph_style,
             success_message,
             stats_html,
+            heatmap_edges,
+            heatmap_tfs,
+            heatmap_genes,
         )
 
     @app.callback(
@@ -2395,6 +2875,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             State("tf-text-input", "value"),
             State("target-dropdown", "value"),
             State("target-text-input", "value"),
+            State("har-dropdown", "value"),
         ],
     )
     def export_data(
@@ -2409,6 +2890,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         tfs_text,
         targets_dropdown,
         targets_text,
+        hars,
     ):
         if n_clicks is None:
             return ""
@@ -2429,6 +2911,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 specific_stages=stages,
                 specific_regions=regions,
                 specific_celltypes=celltypes,
+                specific_hars=hars if hars else None,
                 output_format="csv",
             )
 
@@ -2451,24 +2934,58 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
     @app.callback(
         [
             Output("theme-store", "data"),
-            Output("theme-icon", "style"),
-            Output("theme-icon-right", "style"),
+            Output("theme-mode-store", "data"),
+            Output("theme-dropdown-label", "children"),
+            Output("theme-opt-light", "className"),
+            Output("theme-opt-dark", "className"),
+            Output("theme-opt-auto", "className"),
         ],
-        [Input("theme-switch", "value")],
+        [
+            Input("theme-opt-light", "n_clicks"),
+            Input("theme-opt-dark", "n_clicks"),
+            Input("theme-opt-auto", "n_clicks"),
+            Input("theme-interval", "n_intervals"),
+        ],
+        [
+            State("theme-store", "data"),
+            State("theme-mode-store", "data"),
+        ],
     )
-    def toggle_theme(switch_value):
-        theme = "dark" if switch_value else "light"
-        left_icon_style = {
-            "fontSize": "18px",
-            "userSelect": "none",
-            "opacity": "1.0" if not switch_value else "0.3",
-        }
-        right_icon_style = {
-            "fontSize": "18px",
-            "userSelect": "none",
-            "opacity": "1.0" if switch_value else "0.3",
-        }
-        return theme, left_icon_style, right_icon_style
+    def update_theme(_n_light, _n_dark, _n_auto, _n_interval, theme, theme_mode):
+        from dash import ctx
+
+        theme = theme or "light"
+        theme_mode = theme_mode or "light"
+        triggered = getattr(ctx, "triggered_id", None)
+
+        if triggered == "theme-opt-light":
+            theme = "light"
+            theme_mode = "light"
+        elif triggered == "theme-opt-dark":
+            theme = "dark"
+            theme_mode = "dark"
+        elif triggered == "theme-opt-auto":
+            theme_mode = "auto"
+            hour = datetime.now().hour
+            theme = "dark" if hour < 6 or hour >= 18 else "light"
+        elif triggered == "theme-interval" and theme_mode == "auto":
+            hour = datetime.now().hour
+            theme = "dark" if hour < 6 or hour >= 18 else "light"
+
+        if theme_mode == "light":
+            label_icon = "⊙"
+        elif theme_mode == "dark":
+            label_icon = "◑"
+        else:
+            label_icon = "◐"
+
+        active = "dropdown-item active"
+        inactive = "dropdown-item"
+        cl_light = active if theme_mode == "light" else inactive
+        cl_dark = active if theme_mode == "dark" else inactive
+        cl_auto = active if theme_mode == "auto" else inactive
+
+        return theme, theme_mode, label_icon, cl_light, cl_dark, cl_auto
 
     app.clientside_callback(
         """
@@ -2505,8 +3022,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--base-dir",
         type=str,
-        default="results/networks/har_csn_atlas",
-        help="Base directory for network data (default: results/networks/har_csn_atlas)",
+        default="results/networks/analysis",
+        help="Base directory for network data (default: results/networks/analysis)",
     )
     parser.add_argument(
         "--regions",
@@ -2558,7 +3075,7 @@ if __name__ == "__main__":
         visualizer = InteractiveNetworkVisualizer(
             data_path=args.data_path,
             har_tf_path=args.har_tf_path,
-            network_dir=args.network_dir,
+            network_dir=args.base_dir,
             regions=args.regions,
             stages=args.stages,
             celltypes=args.celltypes,
