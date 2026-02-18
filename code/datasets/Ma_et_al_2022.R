@@ -42,19 +42,6 @@ column_order <- c(
 )
 metadata <- metadata[, column_order]
 
-# file_snrna <- file.path(res_dir, "snRNA-seq_Human_annot_raw.rds")
-# if (!file.exists(file_snrna)) {
-#   PrepareEnv()
-#   sc <- reticulate::import("scanpy")
-#   adata2 <- sc$read_h5ad(
-#     file.path(data_dir, "processedData/snRNA-seq_Human_annot.h5ad")
-#   )
-#   object4 <- adata_to_srt(adata2)
-#   saveRDS(object4, file_snrna)
-# } else {
-#   object4 <- readRDS(file_snrna)
-# }
-
 metadata <- na.omit(metadata)
 
 counts <- GetAssayData(object2, layer = "counts")

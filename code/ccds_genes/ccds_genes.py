@@ -9,11 +9,9 @@ import os
 import sys
 import csv
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
-# Set paths
 data_dir = "data/ccds_genes"
 os.makedirs(data_dir, exist_ok=True)
 
@@ -21,7 +19,6 @@ url = "https://ftp.ncbi.nlm.nih.gov/pub/CCDS/current_human/CCDS.current.txt"
 local_file = os.path.join(data_dir, "CCDS.current.txt")
 output_file = os.path.join(data_dir, "ccds_genes.csv")
 
-# Download CCDS data if not exists
 if os.path.exists(local_file):
     log_message(
         "CCDS data file already exists: {.path ", local_file, "}", message_type="info"

@@ -145,7 +145,6 @@ def main():
             has_hg = (matched_peaks["peak_status"] == "Human-biased").any()
             has_cg = (matched_peaks["peak_status"] == "Chimp-biased").any()
 
-            # Determine Peak_type based on peak status
             # All branches are mutually exclusive:
             # - Chromatin accessible (human): only Human-biased peaks
             # - Chromatin accessible (chimp): only Chimp-biased peaks

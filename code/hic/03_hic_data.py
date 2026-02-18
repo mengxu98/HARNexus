@@ -45,10 +45,10 @@ start_time = time.time()
 
 gtf = pd.read_csv(GTF_FILE, sep="\t", comment="#", header=None, low_memory=False)
 
-# Keep only gene entries
 gtf = gtf[gtf[2] == "gene"].copy()
 
 gtf["gene_name"] = gtf[8].str.extract('gene_name "([^"]+)"')
+
 
 def get_promoter(row, flank=PROMOTER_FLANK):
     if row[6] == "+":
@@ -164,8 +164,6 @@ log_message(
     f"Total Hi-C pairs scanned: {total_pairs:,} ({elapsed:.1f}s)", message_type="info"
 )
 log_message(f"Unique HAR–gene contacts: {len(contact_dict):,}", message_type="success")
-
-# Step 5: Output results
 
 log_message("Generating output table...", message_type="running")
 start_time = time.time()

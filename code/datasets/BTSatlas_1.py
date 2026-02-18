@@ -25,26 +25,21 @@ if not os.path.exists(h5ad_path):
     sys.exit(1)
 
 log_message("Loading h5ad file: {.path ", h5ad_path, "}")
-# Load without backed mode to ensure all data is accessible
-# For large files, this will use more memory but ensures compatibility
 adata = sc.read_h5ad(h5ad_path)
 
 log_message("AnnData shape: {.val ", adata.shape, "}")
 log_message("Number of cells: {.val ", adata.n_obs, "}")
 log_message("Number of genes: {.val ", adata.n_vars, "}")
 
-# Check available layers
 if hasattr(adata, "layers") and len(adata.layers) > 0:
     log_message(
         "Available layers: {.val ", list(adata.layers.keys()), "}", message_type="info"
     )
 
-# Extract count matrix - try multiple strategies
 count_matrix = None
 gene_names = None
 var_df = None
 
-# Strategy 1: Try raw layer first
 if adata.raw is not None:
     try:
         log_message("Trying raw layer for count matrix...", message_type="info")
@@ -57,7 +52,6 @@ if adata.raw is not None:
             "Failed to access raw layer: {.val ", str(e), "}", message_type="warning"
         )
 
-# Strategy 2: Try main X matrix
 if count_matrix is None:
     try:
         log_message("Trying main X matrix...", message_type="info")
@@ -73,9 +67,7 @@ if count_matrix is None:
             message_type="warning",
         )
 
-# Strategy 3: Try layers if X is not available
 if count_matrix is None and hasattr(adata, "layers") and len(adata.layers) > 0:
-    # Try common layer names for count data
     layer_candidates = ["counts", "raw_counts", "logcounts"]
     for layer_name in layer_candidates:
         if layer_name in adata.layers:
@@ -106,7 +98,6 @@ if count_matrix is None and hasattr(adata, "layers") and len(adata.layers) > 0:
                     message_type="warning",
                 )
 
-    # If no specific layer found, use first available layer
     if count_matrix is None:
         layer_name = list(adata.layers.keys())[0]
         log_message(
@@ -119,18 +110,15 @@ if count_matrix is None and hasattr(adata, "layers") and len(adata.layers) > 0:
         gene_names = adata.var_names
         var_df = adata.var.copy()
 
-# Final check
 if count_matrix is None:
     log_message(
         "Error: Could not extract count matrix from any source", message_type="error"
     )
     sys.exit(1)
 
-# Check and convert matrix format for R compatibility
 log_message("Checking matrix format...", message_type="info")
 if sparse.issparse(count_matrix):
     log_message("Count matrix is sparse, format: {.val ", count_matrix.format, "}")
-    # Convert to CSC format for better R compatibility
     if count_matrix.format != "csc":
         log_message(
             "Converting to CSC format for R compatibility...", message_type="running"
@@ -145,15 +133,12 @@ else:
 
 log_message("Count matrix format: {.val ", count_matrix.format, "}")
 
-# Create a new AnnData object with count matrix in X
-# This ensures X is in the correct format for scop's adata_to_srt
 log_message("Creating compatible AnnData object...", message_type="running")
 
 adata_new = sc.AnnData(X=count_matrix, obs=adata.obs.copy(), var=var_df.copy())
 adata_new.var_names = gene_names
 adata_new.obs_names = adata.obs_names
 
-# Save compatible h5ad file
 compatible_h5ad_path = os.path.join(res_dir, "BTS_atlas_compatible.h5ad")
 log_message("Saving compatible h5ad file to {.path ", compatible_h5ad_path, "}")
 adata_new.write(compatible_h5ad_path, compression="gzip")
@@ -163,24 +148,20 @@ log_message(
     "You can now use this file with scop's adata_to_srt function", message_type="info"
 )
 
-# Also save metadata as CSV for R script
 log_message("Saving metadata as CSV...", message_type="running")
 
-# Extract metadata
 metadata = adata.obs.copy()
 metadata.index.name = "cell_barcode"
 
 log_message("Metadata shape: {.val ", metadata.shape, "}")
 log_message("Metadata columns: {.val ", list(metadata.columns), "}")
 
-# Save metadata as CSV
 metadata_csv_path = os.path.join(res_dir, "metadata.csv")
 log_message("Saving metadata to {.path ", metadata_csv_path, "}")
 metadata.to_csv(metadata_csv_path)
 
 log_message("Metadata saved successfully", message_type="success")
 
-# Save gene information if available
 if var_df.shape[1] > 0:
     gene_info = var_df.copy()
     gene_info.index.name = "gene"

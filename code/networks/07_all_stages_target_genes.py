@@ -229,13 +229,11 @@ def run(
 
 
 def main():
-    # Define pairs directly in main function
     pairs = [
         ("Prefrontal cortex", "Excitatory neurons"),
         ("Prefrontal cortex", "Astrocytes")
     ]
     
-    # Extract regions and celltypes from pairs
     regions = sorted(list(set([pair[0] for pair in pairs])))
     celltypes = sorted(list(set([pair[1] for pair in pairs])))
     
@@ -243,7 +241,6 @@ def main():
     for region, celltype in pairs:
         log_message(f"  - {region}, {celltype}", message_type="info")
 
-    # Default paths
     tfs_csv = TFS_CSV
     out_subnetwork = SUBNETWORK_CSV
     out_genes = GENES_CSV

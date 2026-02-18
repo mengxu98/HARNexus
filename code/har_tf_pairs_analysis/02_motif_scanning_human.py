@@ -6,7 +6,6 @@ import sys
 import pandas as pd
 import re
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
@@ -248,10 +247,8 @@ def process_database_hits(database_name, hits):
         )
         return None
 
-    # First, get motif-to-TF mapping
     motif_to_tf = get_motif_to_tf_mapping()
 
-    # Clean motif names
     clean_motif_names = mapped_df["motif_name"].copy()
     mask_duplicate = clean_motif_names.str.contains(" ", regex=False)
     if mask_duplicate.any():
@@ -262,10 +259,8 @@ def process_database_hits(database_name, hits):
             ) & mask_duplicate
             clean_motif_names[mask_same_parts] = duplicate_parts.loc[mask_same_parts, 0]
 
-    # Update the motif_name column with cleaned names
     mapped_df["motif_name"] = clean_motif_names
 
-    # Map motif names to TF names
     if database_name == "JASPAR":
         jaspar_motif_ids = clean_motif_names.str.split(" ", expand=True)[0]
         mapped_df["tf_name"] = jaspar_motif_ids.map(motif_to_tf)
@@ -294,7 +289,6 @@ def process_database_hits(database_name, hits):
                 motif_to_tf
             )
 
-    # Remove rows where tf_name is None
     mapped_df = mapped_df.dropna(subset=["tf_name"])
 
     if len(mapped_df) == 0:
@@ -303,7 +297,6 @@ def process_database_hits(database_name, hits):
         )
         return None
 
-    # Now aggregate by motif first, then by TF
     # Step 1: Aggregate by motif (keep all motif information)
     motif_summary = (
         mapped_df.sort_values("score", ascending=False)
@@ -326,18 +319,17 @@ def process_database_hits(database_name, hits):
         motif_summary.groupby(["har_name", "tf_name"])
         .agg(
             {
-                "score": "max",  # Take the best score among all motifs for this TF
-                "p-value": "min",  # Take the best p-value among all motifs for this TF
-                "start": "first",  # Keep start from the best motif
-                "end": "first",  # Keep end from the best motif
-                "strand": "first",  # Keep strand from the best motif
-                "motif_name": lambda x: ";".join(x),  # Concatenate all motif names
+                "score": "max",
+                "p-value": "min",
+                "start": "first",
+                "end": "first",
+                "strand": "first",
+                "motif_name": lambda x: ";".join(x),
             }
         )
         .reset_index()
     )
 
-    # Add database column
     summary_df["database"] = database_name
 
     output_file = os.path.join(result_dir, f"{database_name.lower()}_hits.csv")
@@ -527,10 +519,8 @@ def process_htf_target_database(har_seqs_file):
             )
             return None
 
-        # Get hTFtarget mapping
         htf_mapping = get_htf_target_mapping()
 
-        # Clean motif names and map to TF names
         clean_motif_names = mapped_df["motif_name"].copy()
         clean_motif_names = clean_motif_names.str.replace(
             " Homo sapiens", "", regex=False
@@ -539,10 +529,8 @@ def process_htf_target_database(har_seqs_file):
             " Mus musculus", "", regex=False
         )
 
-        # Map motif names to TF names
         mapped_df["tf_name"] = clean_motif_names.map(htf_mapping)
 
-        # Remove rows where tf_name is None
         mapped_df = mapped_df.dropna(subset=["tf_name"])
 
         if len(mapped_df) == 0:
@@ -551,7 +539,6 @@ def process_htf_target_database(har_seqs_file):
             )
             return None
 
-        # Now aggregate by motif first, then by TF
         # Step 1: Aggregate by motif (keep all motif information)
         motif_summary = (
             mapped_df.sort_values("score", ascending=False)
@@ -574,18 +561,17 @@ def process_htf_target_database(har_seqs_file):
             motif_summary.groupby(["har_name", "tf_name"])
             .agg(
                 {
-                    "score": "max",  # Take the best score among all motifs for this TF
-                    "p-value": "min",  # Take the best p-value among all motifs for this TF
-                    "start": "first",  # Keep start from the best motif
-                    "end": "first",  # Keep end from the best motif
-                    "strand": "first",  # Keep strand from the best motif
-                    "motif_name": lambda x: ";".join(x),  # Concatenate all motif names
+                    "score": "max",
+                    "p-value": "min",
+                    "start": "first",
+                    "end": "first",
+                    "strand": "first",
+                    "motif_name": lambda x: ";".join(x),
                 }
             )
             .reset_index()
         )
 
-        # Add database column
         summary_df["database"] = "HTFTARGET"
 
         result_dir = "results/har_tf/human"

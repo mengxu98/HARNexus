@@ -11,13 +11,16 @@ get_celltype_specific_genes <- function(
     min_cells = 100,
     verbose = TRUE) {
   if (!inherits(seurat, "Seurat")) {
-    stop("Input 'seurat' must be a Seurat object")
+    log_message(
+      "Input 'seurat' must be a Seurat object",
+      message_type = "error"
+    )
   }
 
   if (!group.by %in% colnames(seurat@meta.data)) {
-    stop(
-      "Cell type column '", group.by,
-      "' not found in Seurat object metadata"
+    log_message(
+      "{.val {group.by}} not found in {.cls Seurat}",
+      message_type = "error"
     )
   }
 
@@ -28,18 +31,27 @@ get_celltype_specific_genes <- function(
   expr_data <- Seurat::GetAssayData(seurat, assay = assay, layer = layer)
   expr_data <- expr_data[rowSums(expr_data) > 0, ]
   if (nrow(expr_data) == 0 || ncol(expr_data) == 0) {
-    stop("Expression matrix is empty")
+    log_message(
+      "Expression matrix is empty",
+      message_type = "error"
+    )
   }
 
   cell_type_vec <- seurat@meta.data[[group.by]]
   if (is.null(cell_type_vec)) {
-    stop("Failed to extract cell type information from metadata")
+    log_message(
+      "Failed to extract cell type information from metadata",
+      message_type = "error"
+    )
   }
 
   cell_types <- sort(unique(cell_type_vec))
 
   if (length(cell_types) == 0) {
-    stop("No cell types found in the specified column")
+    log_message(
+      "No cell types found in the specified column",
+      message_type = "error"
+    )
   }
 
   log_message(
@@ -57,8 +69,9 @@ get_celltype_specific_genes <- function(
 
     if (n_ct == 0) {
       log_message(
-        "No cells found for cell type: {.val {ct}}, skipping.",
-        message_type = "warning"
+        "No cells found for cell type: {.val {ct}}, skipping",
+        message_type = "warning",
+        verbose = verbose
       )
       next
     }
@@ -77,7 +90,8 @@ get_celltype_specific_genes <- function(
     if (length(genes_prop_keep_idx) == 0) {
       log_message(
         "  No genes passed prop filter for {.val {ct}}, skip",
-        message_type = "warning"
+        message_type = "warning",
+        verbose = verbose
       )
       next
     }
@@ -89,8 +103,9 @@ get_celltype_specific_genes <- function(
 
     if (length(genes_mean_keep_idx) == 0) {
       log_message(
-        "  No genes passed mean filter for {.val {ct}}, skip.",
-        message_type = "warning"
+        "  No genes passed mean filter for {.val {ct}}, skip",
+        message_type = "warning",
+        verbose = verbose
       )
       next
     }
@@ -103,7 +118,8 @@ get_celltype_specific_genes <- function(
     if (length(genes_sd_keep_idx) == 0) {
       log_message(
         "  No genes passed SD filter for {.val {ct}}, skip.",
-        message_type = "warning"
+        message_type = "warning",
+        verbose = verbose
       )
       next
     }
@@ -118,7 +134,6 @@ get_celltype_specific_genes <- function(
       expr_other <- expr_data[, cells_other_idx, drop = FALSE]
       mu_other_all <- Matrix::rowMeans(expr_other)
     } else {
-      # If no other cells, set mu_other_all to zero
       mu_other_all <- rep(0, nrow(expr_data))
       names(mu_other_all) <- rownames(expr_data)
     }
@@ -130,8 +145,9 @@ get_celltype_specific_genes <- function(
 
     if (length(genes_SI_keep_idx) == 0) {
       log_message(
-        "  No genes passed SI filter for {.val {ct}}, skip.",
-        message_type = "warning"
+        "  No genes passed SI filter for {.val {ct}}, skip",
+        message_type = "warning",
+        verbose = verbose
       )
       next
     }
@@ -147,8 +163,9 @@ get_celltype_specific_genes <- function(
 
   if (length(gene_sets_list) == 0) {
     log_message(
-      "No cell type-specific genes found for any cell type.",
-      message_type = "warning"
+      "No cell type-specific genes found for any cell type",
+      message_type = "warning",
+      verbose = verbose
     )
   }
 

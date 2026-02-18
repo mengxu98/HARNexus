@@ -13,7 +13,7 @@ objects_plot$Stage <- factor(
 
 Idents(objects_plot) <- "CellType"
 celltype_levels <- sort(as.character(unique(objects_plot$CellType)))
-objects_plot$CellType <- factor(
+objects_plot$Celltype <- factor(
   objects_plot$CellType,
   levels = celltype_levels
 )
@@ -206,7 +206,7 @@ ggsave(
 p7 <- CellDimPlot(
   objects_plot,
   reduction = "umap.rpca",
-  group.by = "CellType",
+  group.by = "Celltype",
   palcolor = color_celltypes[celltype_levels],
   label = FALSE,
   raster = TRUE,
@@ -262,7 +262,7 @@ ggsave(
 )
 
 marker_genes_split <- data.frame(
-  CellType = c(
+  Celltype = c(
     rep("Radial glia", 3),
     rep("Endothelial cells", 4),
     rep("Inhibitory neurons", 3),
@@ -294,13 +294,13 @@ marker_genes_split <- data.frame(
     "MOG", "MAG", "CLDN11"
   )
 )
-celltype_levels <- sort(as.character(unique(marker_genes_split$CellType)))
-marker_genes_split$CellType <- factor(
-  marker_genes_split$CellType,
+celltype_levels <- sort(as.character(unique(marker_genes_split$Celltype)))
+marker_genes_split$Celltype <- factor(
+  marker_genes_split$Celltype,
   levels = celltype_levels
 )
-objects_plot$CellType <- factor(
-  objects_plot$CellType,
+objects_plot$Celltype <- factor(
+  objects_plot$Celltype,
   levels = celltype_levels
 )
 celltype_colors <- color_celltypes[celltype_levels]
@@ -308,8 +308,8 @@ gh <- GroupHeatmap(
   objects_plot,
   exp_legend_title = "Z-score",
   features = marker_genes_split$Genes,
-  feature_split = marker_genes_split$CellType,
-  group.by = "CellType",
+  feature_split = marker_genes_split$Celltype,
+  group.by = "Celltype",
   group_palcolor = celltype_colors,
   cell_annotation_palcolor = celltype_colors,
   feature_split_palcolor = celltype_colors,
@@ -319,12 +319,15 @@ gh <- GroupHeatmap(
   add_dot = TRUE,
   dot_size = unit(6, "mm"),
   nlabel = 0,
-  show_row_names = TRUE
+  show_row_names = TRUE,
+  ht_params = list(
+    row_names_gp = gpar(fontface = "italic")
+  )
 )
 pdf(
   file.path(fig_dir, "group_heatmap_markergenes.pdf"),
-  width = 12,
-  height = 8
+  width = 9.2,
+  height = 6.7
 )
 print(gh$plot)
 dev.off()

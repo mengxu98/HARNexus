@@ -55,7 +55,6 @@ DEFAULT_NODE_COLOR = "rgba(200, 200, 200, 0.8)"
 class LogMessage:
     """Log message formatter with color and style support"""
 
-    # ANSI color codes
     COLORS = {
         "black": "\033[30m",
         "red": "\033[31m",
@@ -77,7 +76,6 @@ class LogMessage:
         "none": "\033[0m",
     }
 
-    # Background colors
     BG_COLORS = {
         "black": "\033[40m",
         "red": "\033[41m",
@@ -100,7 +98,6 @@ class LogMessage:
         "inverse": "\033[7m",
     }
 
-    # Message type symbols and colors
     MESSAGE_TYPES = {
         "info": {"symbol": "ℹ", "color": "blue"},
         "success": {"symbol": "✓", "color": "green"},
@@ -111,7 +108,6 @@ class LogMessage:
 
     RESET = "\033[0m"
 
-    # Inline format styles (cli-style)
     INLINE_FORMATS = {
         ".pkg": {"color": "blue", "style": []},
         ".code": {"color": "grey", "style": []},
@@ -130,7 +126,6 @@ class LogMessage:
 
     def _check_color_support(self):
         """Check if colors should be enabled (prefer enabled unless NO_COLOR is set)."""
-        # disable colors (e.g., R's reticulate output), unless explicitly set NO_COLOR
         self.color_support = os.environ.get("NO_COLOR") is None
 
     def _hex_to_rgb(self, hex_color: str) -> tuple:
@@ -153,7 +148,6 @@ class LogMessage:
         if not self.color_support or not color:
             return text
 
-        # Handle hex colors
         if color.startswith("#"):
             try:
                 rgb = self._hex_to_rgb(color)
@@ -162,7 +156,6 @@ class LogMessage:
             except ValueError:
                 return text
 
-        # Handle named colors
         color_map = self.BG_COLORS if bg else self.COLORS
         if color in color_map:
             return f"{color_map[color]}{text}{self.RESET}"
@@ -209,20 +202,16 @@ class LogMessage:
     ) -> str:
         """Format the complete message"""
 
-        # Get message type info
         msg_info = self.MESSAGE_TYPES.get(message_type, self.MESSAGE_TYPES["info"])
         msg_symbol = msg_info["symbol"]
         msg_color = msg_info["color"]
 
-        # Build timestamp
         timestamp_str = ""
         if timestamp:
             timestamp_str = f"[{datetime.now().strftime(timestamp_format)}] "
 
-        # Build indentation
         indent = self._get_indent(level, symbol)
 
-        # Prepare message-type symbol (with color)
         symbol_colored = (
             self._apply_color(msg_symbol, msg_color)
             if self.color_support
@@ -230,17 +219,14 @@ class LogMessage:
         )
         symbol_part = f"{symbol_colored} "
 
-        # Handle multiline messages
         if "\n" in message:
             lines = message.split("\n")
             formatted_lines = []
 
             for i, line in enumerate(lines):
                 if i == 0 or multiline_indent:
-                    # First line or multiline_indent=True: full formatting (symbol before timestamp)
                     prefix = symbol_part + timestamp_str + indent
                 else:
-                    # Subsequent lines: alignment spaces + indent
                     alignment_spaces = (
                         (" " * (len(symbol_part) + len(timestamp_str)))
                         if timestamp
@@ -248,7 +234,6 @@ class LogMessage:
                     )
                     prefix = alignment_spaces + indent
 
-                # Apply formatting to line
                 formatted_line = self._apply_formatting(
                     line, text_color, back_color, text_style, timestamp_style, prefix
                 )
@@ -256,15 +241,12 @@ class LogMessage:
 
             return "\n".join(formatted_lines)
 
-        # Single line message (symbol before timestamp)
         prefix = symbol_part + timestamp_str + indent
 
-        # Apply formatting
         formatted_msg = self._apply_formatting(
             message, text_color, back_color, text_style, timestamp_style, prefix
         )
 
-        # Already added colored symbol in prefix
         return formatted_msg
 
     def _apply_formatting(
@@ -278,15 +260,12 @@ class LogMessage:
     ) -> str:
         """Apply all formatting to text"""
 
-        # Apply styles first
         if text_style:
             text = self._apply_style(text, text_style)
 
-        # Apply text color
         if text_color:
             text = self._apply_color(text, text_color)
 
-        # Apply background color
         if back_color:
             text = self._apply_color(text, back_color, bg=True)
 
@@ -499,17 +478,13 @@ def log_message(
     if not verbose:
         return
 
-    # Validate message_type
     valid_types = ["info", "success", "warning", "error", "running"]
     if message_type not in valid_types:
         message_type = "info"
 
-    # Get caller frame for inline expression evaluation and traceback
-    # Need to handle both direct calls and calls through convenience functions
     current_frame = inspect.currentframe()
     caller_frame = current_frame.f_back
 
-    # If called through convenience function (log_info, log_error, etc.), skip one more frame
     if caller_frame and caller_frame.f_code.co_name in [
         "log_info",
         "log_success",
@@ -519,16 +494,13 @@ def log_message(
     ]:
         caller_frame = caller_frame.f_back
 
-    # Build message from args
     if not args:
         message = ""
     else:
         message = "".join(str(arg) for arg in args)
 
-    # Parse inline expressions
     message = _logger._parse_inline_expressions(message, caller_frame)
 
-    # Format and print message
     formatted_message = _logger._format_message(
         message=message,
         message_type=message_type,
@@ -543,7 +515,6 @@ def log_message(
         timestamp_style=timestamp_style,
     )
 
-    # Add traceback for error messages
     if message_type == "error" and show_traceback:
         traceback_info = _logger._format_traceback(depth=traceback_depth)
         if traceback_info:
@@ -552,7 +523,6 @@ def log_message(
     print(formatted_message)
 
 
-# Convenience functions for common message types
 def log_info(*args, **kwargs):
     """Log info message"""
     log_message(*args, message_type="info", **kwargs)
@@ -581,12 +551,12 @@ def log_running(*args, **kwargs):
 def check_dir(path: str) -> str:
     """
     Check if a directory exists, create it if it doesn't, and return the path.
-    
+
     Parameters:
     -----------
     path : str
         Directory path to check/create
-        
+
     Returns:
     --------
     str

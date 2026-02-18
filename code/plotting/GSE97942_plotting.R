@@ -50,7 +50,7 @@ ggsave(
 )
 
 marker_genes_split <- data.frame(
-  CellType = c(
+  Celltype = c(
     rep("Microglia", 3),
     rep("Oligodendrocytes", 3),
     rep("Oligodendrocyte progenitor cells", 5),
@@ -67,17 +67,12 @@ marker_genes_split <- data.frame(
     "SLC17A7"
   )
 )
-celltype_levels <- sort(
-  as.character(unique(marker_genes_split$CellType))
-)
-marker_genes_split$CellType <- factor(
-  marker_genes_split$CellType,
+
+marker_genes_split$Celltype <- factor(
+  marker_genes_split$Celltype,
   levels = celltype_levels
 )
-object$CellType <- factor(
-  object$CellType,
-  levels = celltype_levels
-)
+
 celltype_colors <- color_celltypes[celltype_levels]
 p4 <- FeatureDimPlot(
   object,
@@ -92,16 +87,16 @@ p4 <- FeatureDimPlot(
 ggsave(
   file.path(fig_dir, "feature_dim_plot_markergenes.pdf"),
   p4,
-  width = 13.5,
-  height = 10
+  width = 13,
+  height = 9
 )
 
 gh <- GroupHeatmap(
   object,
   exp_legend_title = "Z-score",
   features = marker_genes_split$Genes,
-  feature_split = marker_genes_split$CellType,
-  group.by = "CellType",
+  feature_split = marker_genes_split$Celltype,
+  group.by = "Celltype",
   group_palcolor = celltype_colors,
   cell_annotation_palcolor = celltype_colors,
   feature_split_palcolor = celltype_colors,
@@ -111,12 +106,15 @@ gh <- GroupHeatmap(
   add_dot = TRUE,
   dot_size = unit(12, "mm"),
   nlabel = 0,
-  show_row_names = TRUE
+  show_row_names = TRUE,
+  ht_params = list(
+    row_names_gp = gpar(fontface = "italic")
+  )
 )
 pdf(
   file.path(fig_dir, "group_heatmap_markergenes.pdf"),
-  width = 12,
-  height = 6
+  width = 10.5,
+  height = 5
 )
 print(gh$plot)
 dev.off()

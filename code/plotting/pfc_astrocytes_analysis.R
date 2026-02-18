@@ -130,11 +130,14 @@ for (objects_name in c("var", "target")) {
     dot_size = unit(6, "mm"),
     nlabel = 0,
     show_row_names = TRUE,
-    show_column_names = TRUE
+    show_column_names = TRUE,
+    ht_params = list(
+      row_names_gp = gpar(fontface = "italic")
+    )
   )
   ggsave(
     file.path(fig_dir, paste0("group_heatmap_", objects_name, ".pdf")),
-    width = 6, height = 4
+    width = 6, height = 3.5
   )
 
   GroupHeatmap(
@@ -151,10 +154,13 @@ for (objects_name in c("var", "target")) {
     width = 1,
     add_dot = TRUE,
     dot_size = unit(8, "mm"),
+    ht_params = list(
+      row_names_gp = gpar(fontface = "italic")
+    )
   )
   ggsave(
     file.path(fig_dir, paste0("group_heatmap_celltype_", objects_name, ".pdf")),
-    width = 7, height = 4
+    width = 6.3, height = 3.2
   )
 
   p6 <- FeatureDimPlot(
@@ -162,7 +168,6 @@ for (objects_name in c("var", "target")) {
     features = "Lineage1",
     title = title_name,
     palette = "viridis",
-    # palcolor = c("#0AA344", "#F9BD10", "#D70440"),
     reduction = "umap",
     pt.size = 3,
     raster = TRUE,

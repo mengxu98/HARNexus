@@ -6,7 +6,6 @@ import sys
 from Bio import SeqIO
 import math
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
@@ -28,7 +27,6 @@ def pwm_to_log_odds(pwm, bg, pseudocount=1e-4, use_log2=False):
     return transformed
 
 
-# Define 4 databases to analyze
 databases = {
     "CISBP": "data/motifs/fourdatabase_split/cisbp.meme",
     "HTFTARGET": "data/motifs/hTFtarget_prediction.motifs_matrix.meme",
@@ -42,7 +40,6 @@ human_csv = "results/har_tf/human/har_tf_pairs_scores.csv"
 chimp_csv = "results/har_tf/chimp/har_tf_pairs_scores.csv"
 output_csv = "results/har_tf/motif_score_comparison.csv"
 
-# Database column mapping
 db_column_map = {
     "CISBP": "cisbp_motif_name",
     "JASPAR": "jaspar_motif_name",
@@ -64,7 +61,6 @@ def parse_meme_pwm(meme_path):
             parts = line.split()
             name = parts[1]
             i += 1
-            # move to the header line of the matrix
             while i < len(lines) and not lines[i].strip().startswith(
                 "letter-probability matrix"
             ):
@@ -72,7 +68,6 @@ def parse_meme_pwm(meme_path):
             if i >= len(lines):
                 break
             header = lines[i].strip()
-            # parse w (number of rows in the matrix)
             m = re.search(r"w\s*=\s*(\d+)", header)
             if not m:
                 i += 1
@@ -86,11 +81,9 @@ def parse_meme_pwm(meme_path):
                 row_vals = lines[i].strip().split()
                 if len(row_vals) < 4:
                     break
-                # only take the first 4 columns
                 row = list(map(float, row_vals[:4]))
                 matrix.append(row)
                 i += 1
-            # verify the completeness of the matrix
             if len(matrix) == w and all(len(r) == 4 for r in matrix):
                 names.append(name)
                 motifs.append(matrix)
@@ -113,30 +106,31 @@ def load_motif_info_from_csv(csv_path):
     Returns: {(har, TF, db): [motif_list]}
     """
     motif_map = {}
-    
+
     if not os.path.exists(csv_path):
         log_message(f"CSV file not found: {csv_path}", message_type="warning")
         return motif_map
-    
+
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
             har = row["har"]
             tf = row["TF"]
-            
-            # Extract motifs for each database
+
             for db_name, column_name in db_column_map.items():
                 motif_str = row.get(column_name, "").strip()
                 if not motif_str or motif_str == "":
                     continue
-                
-                # Split by semicolon and filter empty strings
+
                 motif_list = [m.strip() for m in motif_str.split(";") if m.strip()]
                 if motif_list:
                     key = (har, tf, db_name)
                     motif_map[key] = motif_list
-    
-    log_message(f"Loaded {len(motif_map)} HAR-TF-database mappings from {csv_path}", message_type="info")
+
+    log_message(
+        f"Loaded {len(motif_map)} HAR-TF-database mappings from {csv_path}",
+        message_type="info",
+    )
     return motif_map
 
 
@@ -145,34 +139,30 @@ def match_motif_name(target_name, meme_name, db_name):
     Match motif name from CSV with name in MEME file.
     Supports prefix matching and fuzzy matching.
     """
-    # Exact match
     if target_name == meme_name:
         return True
-    
-    # Prefix matching: target_name should be a prefix of meme_name
+
     if meme_name.startswith(target_name):
-        # Check if next character is space or end of string
-        if len(meme_name) == len(target_name) or meme_name[len(target_name)] in [" ", "\t"]:
+        if len(meme_name) == len(target_name) or meme_name[len(target_name)] in [
+            " ",
+            "\t",
+        ]:
             return True
-    
-    # For HTFTARGET: check if target_name is contained in meme_name
+
     if db_name == "HTFTARGET":
         if target_name in meme_name:
             return True
-    
-    # For CISBP: handle cases like "M03329" matching "M03329" or "M03329 ..."
+
     if db_name == "CISBP":
-        # Split meme_name by space and check if first part matches
         parts = meme_name.split()
         if parts and parts[0] == target_name:
             return True
-    
-    # For JASPAR: handle cases like "MA0486.2" matching "MA0486.2 PAX6"
+
     if db_name == "JASPAR":
         parts = meme_name.split()
         if parts and parts[0] == target_name:
             return True
-    
+
     return False
 
 
@@ -190,25 +180,22 @@ def process_database(db_name, meme_file, required_motif_names=None):
 
     if required_motif_names:
         log_message(
-            f"Loading {db_name} database (selective: {len(required_motif_names)} motifs)...", 
-            message_type="running"
+            f"Loading {db_name} database (selective: {len(required_motif_names)} motifs)...",
+            message_type="running",
         )
     else:
         log_message(
             f"Loading {db_name} database from {meme_file}...", message_type="running"
         )
-    
+
     motif_names, motif_matrices = parse_meme_pwm(meme_file)
-    
-    # Create a set of required motif names for fast lookup
+
     required_set = set(required_motif_names) if required_motif_names else None
-    
-    # Filter and match motifs
+
     motif_name_to_pssm = {}
     all_loaded_names = []
-    
+
     for name, matrix in zip(motif_names, motif_matrices):
-        # Filter invalid matrices
         if not matrix:
             continue
         if not all(len(row) == 4 for row in matrix):
@@ -217,33 +204,31 @@ def process_database(db_name, meme_file, required_motif_names=None):
             continue
         if len(matrix) > 2000:
             continue
-        
-        # If required_motif_names is provided, check if this motif matches
+
         if required_set:
             matched = False
             for target_name in required_set:
                 if match_motif_name(target_name, name, db_name):
                     matched = True
                     break
-            
+
             if not matched:
                 continue
-        
+
         # Generate log-odds
         background = [0.25, 0.25, 0.25, 0.25]
         pssm = pwm_to_log_odds(matrix, background)
-        
+
         if not is_finite_matrix(pssm):
             continue
-        
-        # Store using the MEME file name as key (for lookup by matching)
+
         motif_name_to_pssm[name] = pssm
         all_loaded_names.append(name)
-    
+
     if not motif_name_to_pssm:
         log_message(f"No valid motifs found in {db_name}", message_type="warning")
         return None, None
-    
+
     log_message(
         f"{db_name}: {len(motif_name_to_pssm)} motifs loaded", message_type="success"
     )
@@ -259,19 +244,21 @@ chimp_motif_map = load_motif_info_from_csv(chimp_csv)
 all_required_motifs = {}
 for db_name in databases.keys():
     motif_set = set()
-    
+
     # Collect from human CSV
     for (har, tf, db), motif_list in human_motif_map.items():
         if db == db_name:
             motif_set.update(motif_list)
-    
+
     # Collect from chimp CSV
     for (har, tf, db), motif_list in chimp_motif_map.items():
         if db == db_name:
             motif_set.update(motif_list)
-    
+
     all_required_motifs[db_name] = list(motif_set)
-    log_message(f"{db_name}: {len(motif_set)} unique motifs needed", message_type="info")
+    log_message(
+        f"{db_name}: {len(motif_set)} unique motifs needed", message_type="info"
+    )
 
 # Load motifs from databases (selective loading)
 all_databases_data = {}
@@ -361,7 +348,7 @@ for har_id, tf_name in all_har_tf_pairs:
     # Check if sequences exist
     if har_id not in human_seqs or har_id not in chimp_seqs:
         continue
-    
+
     human_seq = human_seqs[har_id]
     chimp_seq = chimp_seqs[har_id]
 
@@ -370,42 +357,36 @@ for har_id, tf_name in all_har_tf_pairs:
         # Get motif lists from both human and chimp CSV
         human_motifs = human_motif_map.get((har_id, tf_name, db_name), [])
         chimp_motifs = chimp_motif_map.get((har_id, tf_name, db_name), [])
-        
+
         # Combine unique motifs from both sources
         all_motifs_for_pair = set(human_motifs + chimp_motifs)
-        
+
         if not all_motifs_for_pair:
             continue
-        
-        # Get PSSM dictionary for this database
+
         db_pssms = all_databases_data.get(db_name, {})
         if not db_pssms:
             continue
-        
-        # Scan each motif
+
         for motif_name in all_motifs_for_pair:
-            # Find matching PSSM
             log_pwm = None
-            # Try exact match first
             if motif_name in db_pssms:
                 log_pwm = db_pssms[motif_name]
             else:
-                # Try to find by matching
                 for pssm_key, pssm_value in db_pssms.items():
                     if match_motif_name(motif_name, pssm_key, db_name):
                         log_pwm = pssm_value
                         break
-            
+
             if log_pwm is None:
                 continue
-            
-            # Scan sequences
+
             best_human = best_pwm_score_both_strands(human_seq, log_pwm)
             best_chimp = best_pwm_score_both_strands(chimp_seq, log_pwm)
-            
+
             if best_human == float("-inf") and best_chimp == float("-inf"):
                 continue
-            
+
             diff = best_human - best_chimp
             direction = (
                 "Gain in human"

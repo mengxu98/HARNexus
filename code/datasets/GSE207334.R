@@ -62,19 +62,6 @@ object1 <- CreateSeuratObject(
   meta.data = metadata
 )
 
-# file_multiome <- file.path(res_dir, "multiome_annot_raw.rds")
-# if (!file.exists(file_multiome)) {
-#   PrepareEnv()
-#   sc <- reticulate::import("scanpy")
-#   adata1 <- sc$read_h5ad(
-#     file.path(data_dir, "processedData/multiome_annot.h5ad")
-#   )
-#   object3 <- adata_to_srt(adata1)
-#   saveRDS(object3, file_multiome)
-# } else {
-#   object3 <- readRDS(file_multiome)
-# }
-
 log_message("Save data...")
 
 saveRDS(

@@ -10,7 +10,6 @@ res <- RunEnrichment(
   Ensembl_version = 113
 )
 
-
 p1 <- EnrichmentPlot(
   res = res,
   plot_type = "lollipop"
@@ -20,16 +19,6 @@ ggsave(
   p1,
   width = 7.5,
   height = 4
-)
-
-EnrichmentPlot(
-  res = res,
-  plot_type = "network"
-)
-ggsave(
-  file.path(fig_dir, "tfs_enrichment_network.pdf"),
-  width = 12,
-  height = 10
 )
 
 EnrichmentPlot(

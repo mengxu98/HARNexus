@@ -572,13 +572,11 @@ def run(
 
 
 def main():
-    # Define pairs directly in main function
     pairs = [
         ("Prefrontal cortex", "Excitatory neurons"),
         ("Prefrontal cortex", "Astrocytes")
     ]
     
-    # Extract regions and celltypes from pairs
     regions = sorted(list(set([pair[0] for pair in pairs])))
     celltypes = sorted(list(set([pair[1] for pair in pairs])))
     
@@ -586,10 +584,9 @@ def main():
     for region, celltype in pairs:
         log_message(f"  - {region}, {celltype}", message_type="info")
 
-    # Default paths
     csv_dir = "results/networks/har_csn_atlas/csv"
     out_dir = "results/networks/analysis"
-    mode = MODE_TF_GENE  # Default mode
+    mode = MODE_TF_GENE
     with_targets = True
     with_regulators = True
 

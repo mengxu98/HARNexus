@@ -6,7 +6,6 @@ import sys
 import pandas as pd
 import re
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
@@ -308,28 +307,32 @@ def process_database_hits(database_name, hits):
     motif_summary = (
         mapped_df.sort_values("score", ascending=False)
         .groupby(["har_name", "motif_name"])
-        .agg({
-            "score": "max",
-            "p-value": "min",
-            "start": "first",
-            "end": "first", 
-            "strand": "first",
-            "tf_name": "first"
-        })
+        .agg(
+            {
+                "score": "max",
+                "p-value": "min",
+                "start": "first",
+                "end": "first",
+                "strand": "first",
+                "tf_name": "first",
+            }
+        )
         .reset_index()
     )
 
     # Step 2: Aggregate by TF (combine multiple motifs for same TF)
     summary_df = (
         motif_summary.groupby(["har_name", "tf_name"])
-        .agg({
-            "score": "max",  # Take the best score among all motifs for this TF
-            "p-value": "min",  # Take the best p-value among all motifs for this TF
-            "start": "first",  # Keep start from the best motif
-            "end": "first",    # Keep end from the best motif
-            "strand": "first", # Keep strand from the best motif
-            "motif_name": lambda x: ";".join(x)  # Concatenate all motif names
-        })
+        .agg(
+            {
+                "score": "max",  # Take the best score among all motifs for this TF
+                "p-value": "min",  # Take the best p-value among all motifs for this TF
+                "start": "first",  # Keep start from the best motif
+                "end": "first",  # Keep end from the best motif
+                "strand": "first",  # Keep strand from the best motif
+                "motif_name": lambda x: ";".join(x),  # Concatenate all motif names
+            }
+        )
         .reset_index()
     )
 
@@ -537,7 +540,7 @@ def process_htf_target_database(har_seqs_file):
 
         # Map motif names to TF names
         mapped_df["tf_name"] = clean_motif_names.map(htf_mapping)
-        
+
         # Remove rows where tf_name is None
         mapped_df = mapped_df.dropna(subset=["tf_name"])
 
@@ -552,28 +555,32 @@ def process_htf_target_database(har_seqs_file):
         motif_summary = (
             mapped_df.sort_values("score", ascending=False)
             .groupby(["har_name", "motif_name"])
-            .agg({
-                "score": "max",
-                "p-value": "min",
-                "start": "first",
-                "end": "first", 
-                "strand": "first",
-                "tf_name": "first"
-            })
+            .agg(
+                {
+                    "score": "max",
+                    "p-value": "min",
+                    "start": "first",
+                    "end": "first",
+                    "strand": "first",
+                    "tf_name": "first",
+                }
+            )
             .reset_index()
         )
 
         # Step 2: Aggregate by TF (combine multiple motifs for same TF)
         summary_df = (
             motif_summary.groupby(["har_name", "tf_name"])
-            .agg({
-                "score": "max",  # Take the best score among all motifs for this TF
-                "p-value": "min",  # Take the best p-value among all motifs for this TF
-                "start": "first",  # Keep start from the best motif
-                "end": "first",    # Keep end from the best motif
-                "strand": "first", # Keep strand from the best motif
-                "motif_name": lambda x: ";".join(x)  # Concatenate all motif names
-            })
+            .agg(
+                {
+                    "score": "max",  # Take the best score among all motifs for this TF
+                    "p-value": "min",  # Take the best p-value among all motifs for this TF
+                    "start": "first",  # Keep start from the best motif
+                    "end": "first",  # Keep end from the best motif
+                    "strand": "first",  # Keep strand from the best motif
+                    "motif_name": lambda x: ";".join(x),  # Concatenate all motif names
+                }
+            )
             .reset_index()
         )
 

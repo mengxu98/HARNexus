@@ -7,7 +7,6 @@ from typing import Dict, Set
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message, check_dir
 
-# Get project root directory (two levels up from this script)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 
@@ -50,7 +49,6 @@ def calculate_network_stats(network_df: pd.DataFrame) -> Dict:
 
 
 def main():
-    # Define sample pairs to loop through
     sample_pairs = [
         {"human": "h4", "chimp": "c4"},
         {"human": "h3", "chimp": "c2"},
@@ -59,7 +57,6 @@ def main():
 
     exclude_tfs_in_genes = True
 
-    # Loop through each sample pair
     for pair in sample_pairs:
         human_sample = pair["human"]
         chimp_sample = pair["chimp"]
@@ -121,7 +118,7 @@ def main():
 
         for file_info in human_files:
             ct = file_info["CellType"]
-            csv_path = file_info["CSV_File"]  # Already absolute path
+            csv_path = file_info["CSV_File"]
             net_df = load_network_from_csv(csv_path)
             if exclude_tfs_in_genes:
                 net_df = net_df[~net_df["target"].isin(net_df["regulator"])]
@@ -132,7 +129,7 @@ def main():
 
         for file_info in chimp_files:
             ct = file_info["CellType"]
-            csv_path = file_info["CSV_File"]  # Already absolute path
+            csv_path = file_info["CSV_File"]
             net_df = load_network_from_csv(csv_path)
             if exclude_tfs_in_genes:
                 net_df = net_df[~net_df["target"].isin(net_df["regulator"])]
@@ -230,7 +227,6 @@ def main():
 
         summary_df = pd.DataFrame(comparison_results)
 
-        # Check if summary_df is empty
         if summary_df.empty or "CellType" not in summary_df.columns:
             log_message(
                 "Warning: No valid networks found for comparison. Skipping similarity calculations.",

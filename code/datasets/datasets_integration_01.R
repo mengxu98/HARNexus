@@ -133,11 +133,15 @@ if (!file.exists(objects_list_file)) {
   brain_region_map["V1C"] <- "Primary visual cortex"
 
   # GSE199762
-  brain_region_map["CGE"] <- "Ganglionic eminence" # "Caudal ganglionic eminence"
+  # "Caudal ganglionic eminence"
+  brain_region_map["CGE"] <- "Ganglionic eminence"
   brain_region_map["dEC"] <- "Entorhinal cortex"
-  brain_region_map["EC Stream"] <- "Entorhinal cortex" # "Entorhinal cortex stream"
-  brain_region_map["LGE"] <- "Ganglionic eminence" # "Lateral ganglionic eminence"
-  brain_region_map["MGE"] <- "Ganglionic eminence" # "Medial ganglionic eminence"
+  # "Entorhinal cortex stream"
+  brain_region_map["EC Stream"] <- "Entorhinal cortex"
+  # "Lateral ganglionic eminence"
+  brain_region_map["LGE"] <- "Ganglionic eminence"
+  # "Medial ganglionic eminence"
+  brain_region_map["MGE"] <- "Ganglionic eminence"
   h_labels <- c("H29", "H31", "H33", "H37", "H39", "H46", "H48", "H71")
   for (h in h_labels) brain_region_map[h] <- "Entorhinal cortex"
 

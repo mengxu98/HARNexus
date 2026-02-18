@@ -5,7 +5,6 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import log_message
 
-# Get project root directory (two levels up from this script)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 
@@ -80,14 +79,12 @@ def load_networks_from_csv(res_dir, species, sample):
 
 
 def main():
-    # Define sample pairs to loop through
     sample_pairs = [
         {"human": "h4", "chimp": "c4"},
         {"human": "h3", "chimp": "c2"},
         {"human": "h1", "chimp": "c1"},
     ]
 
-    # Loop through each sample pair
     for pair in sample_pairs:
         human_sample = pair["human"]
         chimp_sample = pair["chimp"]

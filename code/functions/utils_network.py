@@ -51,7 +51,6 @@ def load_network_data(
     --------
     pd.DataFrame : Loaded network data
     """
-    # If direct file path is provided, use it
     if file_path and Path(file_path).exists():
         log_message(f"Loading from direct path: {file_path}", message_type="info")
         combined_data = pd.read_csv(file_path)
@@ -59,7 +58,6 @@ def load_network_data(
         csv_dir = Path(network_dir) / "csv"
         all_data_path = Path(network_dir) / "network_data.csv"
 
-        # If specific Region, Stage, CellType combination is specified, try to read corresponding CSV files
         if regions and stages and celltypes:
             data_frames = []
             matched_files = []
@@ -67,7 +65,6 @@ def load_network_data(
             for region in regions:
                 for stage in stages:
                     for celltype in celltypes:
-                        # Build filename: {Region}_{Stage}_{CellType}.csv
                         filename = f"{region}_{stage}_{celltype}.csv"
                         file_path = csv_dir / filename
 
@@ -78,7 +75,6 @@ def load_network_data(
                                 )
                                 df = pd.read_csv(file_path)
 
-                                # Handle column name differences: regulator -> TF, target -> Target, weight -> Weight
                                 if "regulator" in df.columns:
                                     df = df.rename(
                                         columns={
@@ -88,7 +84,6 @@ def load_network_data(
                                         }
                                     )
 
-                                # Add metadata columns (extracted from filename)
                                 df["Region"] = region
                                 df["Stage"] = stage
                                 df["CellType"] = celltype
@@ -122,7 +117,6 @@ def load_network_data(
                         f"Main data file not found: {all_data_path}"
                     )
         else:
-            # If no complete conditions specified, read main data file
             log_message(
                 f"Loading from main data file: {all_data_path}", message_type="info"
             )
@@ -130,7 +124,6 @@ def load_network_data(
                 raise FileNotFoundError(f"Main data file not found: {all_data_path}")
             combined_data = pd.read_csv(all_data_path)
 
-    # Ensure required columns exist
     required_columns = ["TF", "Target", "Weight"]
     optional_columns = ["Region", "Stage", "CellType"]
 
@@ -138,12 +131,10 @@ def load_network_data(
         if col not in combined_data.columns:
             raise ValueError(f"Required column '{col}' not found in data")
 
-    # Add missing optional columns
     for col in optional_columns:
         if col not in combined_data.columns:
             combined_data[col] = "Unknown"
 
-    # Data cleaning
     combined_data = combined_data.fillna(
         {
             "Weight": 0,
@@ -155,21 +146,17 @@ def load_network_data(
         }
     )
 
-    # Filter by HAR (if HARs and har_tf_data are provided)
     if hars and har_tf_data is not None:
-        # Find TFs related to specified HARs
         relevant_tfs = har_tf_data[har_tf_data["HAR"].isin(hars)]["TF"].unique()
         combined_data = combined_data[combined_data["TF"].isin(relevant_tfs)]
         log_message(
             f"Filtered by HARs: {len(relevant_tfs)} TFs found", message_type="info"
         )
 
-    # Filter by TF
     if tfs:
         combined_data = combined_data[combined_data["TF"].isin(tfs)]
         log_message(f"Filtered by TFs: {len(tfs)} TFs", message_type="info")
 
-    # Filter by Target
     if targets:
         combined_data = combined_data[combined_data["Target"].isin(targets)]
         n_found = combined_data["Target"].nunique()
@@ -183,14 +170,12 @@ def load_network_data(
                 f"Filtered by Targets: {len(targets)} targets", message_type="info"
             )
 
-    # Filter invalid data
     combined_data = combined_data[
         (combined_data["Weight"] != 0)
         & (combined_data["TF"] != "Unknown_TF")
         & (combined_data["Target"] != "Unknown_Target")
     ].copy()
 
-    # Optimize data types
     combined_data["Weight"] = combined_data["Weight"].astype("float32")
 
     log_message(
@@ -224,11 +209,9 @@ def load_har_tf_data(
         log_message(f"Loading HAR-TF data from {file_path}...", message_type="info")
         har_tf_data = pd.read_csv(file_path)
 
-        # Handle column names: ensure TF and HAR columns exist (column name might be lowercase har)
         if "HAR" not in har_tf_data.columns and "har" in har_tf_data.columns:
             har_tf_data = har_tf_data.rename(columns={"har": "HAR"})
 
-        # Keep only TF and HAR columns, and remove duplicates
         if "TF" in har_tf_data.columns and "HAR" in har_tf_data.columns:
             har_tf_data = har_tf_data[["TF", "HAR"]].drop_duplicates()
         else:
@@ -288,8 +271,6 @@ def generate_colors(n):
     ]
 
     colors = []
-    # Repeat base colors with different alpha when n > len(base_colors).
-    # Keep alpha in [0.2, 1] (Plotly rejects negative or >1 alpha).
     while len(colors) < n:
         raw = 0.8 - (0.3 * (len(colors) // len(base_colors)))
         alpha = max(0.2, min(1.0, raw))

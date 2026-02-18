@@ -253,7 +253,9 @@ for (pair in sample_pairs) {
             net
           },
           error = function(e) {
-            log_message("  Error building network for Human {.val {ct}}: {.val {conditionMessage(e)}}")
+            log_message(
+              "  Error building network for Human {.val {ct}}: {.val {conditionMessage(e)}}"
+            )
             not_built_networks <<- rbind(
               not_built_networks,
               data.frame(
@@ -272,17 +274,16 @@ for (pair in sample_pairs) {
       }
     }
 
-    # Save aggregated networks
     saveRDS(human_networks, human_networks_file)
   }
 
-  # Check if aggregated networks file exists
   chimp_networks_file <- file.path(res_dir, paste0("chimp_", chimp_sample, "_networks.rds"))
 
   if (file.exists(chimp_networks_file)) {
-    log_message("Reading existing Chimpanzee networks from {.file {chimp_networks_file}}...")
+    log_message(
+      "Reading existing Chimpanzee networks from {.file {chimp_networks_file}}..."
+    )
     chimp_networks <- readRDS(chimp_networks_file)
-    # Ensure CSV files exist for network comparison script
     for (ct in names(chimp_networks)) {
       if (!is.null(chimp_networks[[ct]])) {
         csv_file <- file.path(
@@ -413,7 +414,6 @@ for (pair in sample_pairs) {
       }
     }
 
-    # Save aggregated networks
     saveRDS(chimp_networks, chimp_networks_file)
   }
 

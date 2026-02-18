@@ -907,9 +907,6 @@ enrichment_heatmap <- function(
         size = 9,
         color = "black"
       ),
-      # axis.text.y = element_text(
-      #   size = 5
-      # ),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       plot.margin = margin(5, 5, 5, 5, "pt")

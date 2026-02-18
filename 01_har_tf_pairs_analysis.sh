@@ -15,3 +15,6 @@ run_python_script "$code_dir" "03_motif_scanning_chimp.py" "Motif scanning chimp
 run_r_script "$code_dir" "04_tfs_processing.R" "TFs processing"
 run_python_script "$code_dir" "05_motif_scoring.py" "Motif scoring"
 run_r_script "$code_dir" "06_motifs_processing.R" "Motifs processing"
+run_python_script "$code_dir" "07_tfs.py" "TFs"
+
+log_success "HAR-TF pairs analysis completed!"
