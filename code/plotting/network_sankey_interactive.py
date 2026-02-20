@@ -551,7 +551,7 @@ class InteractiveNetworkVisualizer:
                 har_tf_filtered = har_tf_filtered[
                     har_tf_filtered["HAR"].isin(specific_hars)
                 ]
-            
+
             har_tf_groups = (
                 har_tf_filtered.groupby("TF")["HAR"]
                 .agg(lambda x: sorted(x))
@@ -1458,12 +1458,43 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 body {
                     background-color: var(--bg-color);
                     color: var(--text-color);
-                    transition: background-color 0.3s ease, color 0.3s ease;
+                    transition: background-color 0.2s ease, color 0.2s ease;
+                }
+                
+                .card, .btn, .form-control, .form-select, .dropdown-menu, .alert, .btn-group {
+                    box-shadow: none !important;
+                }
+                
+                .btn-group .btn {
+                    border-radius: 0;
+                }
+                
+                .btn-group .btn:not(:first-child) {
+                    margin-left: -1px;
+                }
+                
+                .btn-group .btn:focus {
+                    z-index: 1;
+                }
+                
+                .alert {
+                    border-radius: 0;
+                    border-width: 1px;
+                    border-style: solid;
                 }
                 
                 [data-theme="dark"] body {
                     background-color: var(--bg-color);
                     color: var(--text-color);
+                }
+                
+                [data-theme="dark"] .card, 
+                [data-theme="dark"] .btn, 
+                [data-theme="dark"] .form-control, 
+                [data-theme="dark"] .form-select, 
+                [data-theme="dark"] .dropdown-menu, 
+                [data-theme="dark"] .alert {
+                    box-shadow: none !important;
                 }
                 
                 [data-theme="dark"] .text-muted {
@@ -1496,33 +1527,47 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                     color: var(--text-color);
                 }
                 
+                textarea {
+                    border-radius: 0;
+                    box-shadow: none;
+                }
+                
                 [data-theme="dark"] textarea {
                     background-color: var(--card-bg);
                     color: var(--text-color);
                     border-color: var(--card-border);
+                    border-radius: 0;
+                    box-shadow: none;
                 }
                 
                 [data-theme="dark"] textarea:focus {
                     background-color: var(--card-bg);
                     color: var(--text-color);
                     border-color: var(--primary-color);
+                    box-shadow: none;
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: -2px;
                 }
                 
                 .card {
                     background-color: var(--card-bg);
                     border-color: var(--card-border);
-                    border-radius: 10px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    transition: all 0.3s ease;
+                    border-radius: 0;
+                    border-width: 1px;
+                    border-style: solid;
+                    box-shadow: none;
+                    transition: none;
                 }
                 
                 [data-theme="dark"] .card {
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    box-shadow: none;
                 }
                 
                 .card-header {
                     background-color: var(--card-bg);
                     border-bottom: 1px solid var(--card-border);
+                    border-width: 0 0 1px 0;
+                    border-style: solid;
                     font-weight: 600;
                     padding: 1rem;
                     display: flex;
@@ -1531,27 +1576,34 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 }
                 
                 .btn {
-                    border-radius: 6px;
+                    border-radius: 0;
                     font-weight: 500;
-                    transition: all 0.2s ease;
+                    border-width: 1px;
+                    border-style: solid;
+                    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
                 }
                 
                 .btn:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                    transform: none;
+                    box-shadow: none;
+                    opacity: 0.9;
                 }
                 
                 .form-control, .form-select {
-                    border-radius: 6px;
+                    border-radius: 0;
                     border: 1px solid var(--card-border);
-                    transition: all 0.2s ease;
+                    border-width: 1px;
+                    border-style: solid;
+                    transition: border-color 0.15s ease;
                     background-color: var(--card-bg);
                     color: var(--text-color);
                 }
                 
                 .form-control:focus, .form-select:focus {
                     border-color: var(--primary-color);
-                    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+                    box-shadow: none;
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: -2px;
                     background-color: var(--card-bg);
                     color: var(--text-color);
                 }
@@ -1572,8 +1624,8 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 }
                 
                 h1 {
-                    font-weight: 700;
-                    letter-spacing: -0.5px;
+                    font-weight: 600;
+                    letter-spacing: 0;
                 }
                 
                 .page-title {
@@ -1609,10 +1661,12 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                 
                 .theme-switch-container .dropdown-menu {
                     min-width: 120px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(0,0,0,0.08);
+                    border-radius: 0;
+                    border: 1px solid var(--card-border);
+                    border-width: 1px;
+                    border-style: solid;
                     padding: 4px 0;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    box-shadow: none;
                 }
                 
                 .network-statistics-card-header {
@@ -1739,6 +1793,55 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
                     background-color: var(--card-border) !important;
                 }
                 
+                .navbar-fixed {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                    background-color: var(--bg-color);
+                    border-bottom: 1px solid var(--card-border);
+                    margin-left: -12px;
+                    margin-right: -12px;
+                    padding-left: 12px;
+                    padding-right: 12px;
+                }
+                
+                .nav-icon-btn {
+                    transition: opacity 0.2s ease, transform 0.2s ease;
+                }
+                
+                .nav-icon-btn:hover {
+                    opacity: 0.8;
+                    transform: scale(1.05);
+                }
+                
+                .nav-icon-btn:active {
+                    transform: scale(0.95);
+                }
+                
+                #theme-dropdown-label {
+                    transition: opacity 0.2s ease, transform 0.2s ease;
+                }
+                
+                #theme-dropdown-label:hover {
+                    opacity: 0.8;
+                    transform: scale(1.05);
+                }
+                
+                #theme-dropdown-label:active {
+                    transform: scale(0.95);
+                }
+                
+                .nav-icon-btn .dropdown-toggle {
+                    padding: 0 !important;
+                    border: none !important;
+                    background: none !important;
+                    box-shadow: none !important;
+                }
+                
+                .nav-icon-btn .dropdown-toggle::after {
+                    display: none !important;
+                }
+                
                 #success-message-container {
                     position: relative;
                     margin-top: 10px;
@@ -1801,89 +1904,149 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         [
             dcc.Store(id="page-load", data=True),
             dcc.Store(id="theme-store", data="light"),
-            dcc.Store(id="theme-mode-store", data="light"),
+            dcc.Store(id="theme-mode-store", data="auto"),
             dcc.Interval(id="theme-interval", interval=60 * 1000, n_intervals=0),
             html.Div(id="_dummy-output", style={"display": "none"}),
-            dbc.Row(
+            html.Div(
                 [
-                    dbc.Col(
+                    dbc.Row(
                         [
-                            html.Div(
+                            dbc.Col(
                                 [
-                                    html.H1(
-                                        capitalize_first_word(
-                                            "Interactive network visualization"
-                                        ),
-                                        className="mb-0 page-title",
-                                    ),
                                     html.Div(
                                         [
-                                            dbc.DropdownMenu(
+                                            html.H1(
+                                                capitalize_first_word(
+                                                    "Interactive network visualization"
+                                                ),
+                                                className="mb-0 page-title",
+                                            ),
+                                            html.Div(
                                                 [
-                                                    dbc.DropdownMenuItem(
+                                                    dbc.DropdownMenu(
                                                         [
-                                                            html.Span(
-                                                                "⊙",
-                                                                className="me-2 theme-icon-symbol",
+                                                            dbc.DropdownMenuItem(
+                                                                [
+                                                                    html.Span(
+                                                                        "⊙",
+                                                                        className="me-2 theme-icon-symbol",
+                                                                    ),
+                                                                    "Light",
+                                                                ],
+                                                                id="theme-opt-light",
                                                             ),
-                                                            "Light",
+                                                            dbc.DropdownMenuItem(
+                                                                [
+                                                                    html.Span(
+                                                                        "◑",
+                                                                        className="me-2 theme-icon-symbol",
+                                                                    ),
+                                                                    "Dark",
+                                                                ],
+                                                                id="theme-opt-dark",
+                                                            ),
+                                                            dbc.DropdownMenuItem(
+                                                                [
+                                                                    html.Span(
+                                                                        "◐",
+                                                                        className="me-2 theme-icon-symbol",
+                                                                    ),
+                                                                    "Auto",
+                                                                ],
+                                                                id="theme-opt-auto",
+                                                            ),
                                                         ],
-                                                        id="theme-opt-light",
+                                                        label=html.Div(
+                                                            id="theme-dropdown-label",
+                                                            style={
+                                                                "display": "inline-flex",
+                                                                "alignItems": "center",
+                                                                "justifyContent": "center",
+                                                                "width": "30px",
+                                                                "height": "30px",
+                                                                "borderRadius": "50%",
+                                                                "backgroundColor": "#ffffff",
+                                                                "border": "1px solid #d0d7de",
+                                                                "cursor": "pointer",
+                                                                "userSelect": "none",
+                                                                "flexShrink": "0",
+                                                            },
+                                                            children=html.Div(
+                                                                id="theme-icon-inner",
+                                                                style={
+                                                                    "width": "20px",
+                                                                    "height": "20px",
+                                                                    "borderRadius": "50%",
+                                                                    "background": "linear-gradient(to right, #0969da 50%, #ffffff 50%)",
+                                                                    "border": "1px solid #d0d7de",
+                                                                },
+                                                            ),
+                                                        ),
+                                                        id="theme-dropdown",
+                                                        color="link",
+                                                        className="p-0 border-0 nav-icon-btn",
+                                                        menu_variant="light",
+                                                        align_end=True,
                                                     ),
-                                                    dbc.DropdownMenuItem(
-                                                        [
-                                                            html.Span(
-                                                                "◑",
-                                                                className="me-2 theme-icon-symbol",
-                                                            ),
-                                                            "Dark",
-                                                        ],
-                                                        id="theme-opt-dark",
+                                                    html.Span(
+                                                        "|",
+                                                        className="nav-separator",
+                                                        style={
+                                                            "margin": "0 12px",
+                                                            "color": "#d0d7de",
+                                                            "fontWeight": "300",
+                                                            "userSelect": "none",
+                                                            "fontSize": "18px",
+                                                        },
                                                     ),
-                                                    dbc.DropdownMenuItem(
-                                                        [
-                                                            html.Span(
-                                                                "◐",
-                                                                className="me-2 theme-icon-symbol",
-                                                            ),
-                                                            "Auto",
-                                                        ],
-                                                        id="theme-opt-auto",
+                                                    html.A(
+                                                        href="https://github.com/mengxu98/HARNexus",
+                                                        id="nav-github-btn",
+                                                        target="_blank",
+                                                        rel="noopener noreferrer",
+                                                        className="nav-icon-btn",
+                                                        style={
+                                                            "display": "inline-flex",
+                                                            "alignItems": "center",
+                                                            "justifyContent": "center",
+                                                            "width": "30px",
+                                                            "height": "30px",
+                                                            "borderRadius": "50%",
+                                                            "backgroundColor": "#374151",
+                                                            "textDecoration": "none",
+                                                            "border": "none",
+                                                            "flexShrink": "0",
+                                                        },
+                                                        title="View on GitHub",
+                                                        children=html.Img(
+                                                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z'/%3E%3C/svg%3E",
+                                                            alt="GitHub",
+                                                            style={
+                                                                "width": "20px",
+                                                                "height": "20px",
+                                                                "display": "block",
+                                                            },
+                                                        ),
                                                     ),
                                                 ],
-                                                label=html.Div(
-                                                    id="theme-dropdown-label",
-                                                    children="⊙",
-                                                    style={
-                                                        "cursor": "pointer",
-                                                        "userSelect": "none",
-                                                        "fontSize": "1.4rem",
-                                                        "lineHeight": "1",
-                                                        "verticalAlign": "baseline",
-                                                    },
-                                                ),
-                                                id="theme-dropdown",
-                                                color="link",
-                                                className="p-0 border-0",
-                                                style={"verticalAlign": "baseline"},
-                                                menu_variant="light",
-                                                align_end=True,
+                                                className="theme-switch-container d-flex align-items-center",
+                                                style={
+                                                    "marginLeft": "auto",
+                                                    "alignSelf": "center",
+                                                },
                                             ),
                                         ],
-                                        className="theme-switch-container",
-                                        style={
-                                            "marginLeft": "auto",
-                                            "alignSelf": "center",
-                                        },
+                                        className="d-flex flex-nowrap align-items-baseline justify-content-between mb-2",
+                                        style={"marginTop": "8px"},
                                     ),
-                                ],
-                                className="d-flex flex-nowrap align-items-baseline justify-content-between mb-2",
-                                style={"marginTop": "8px"},
-                            ),
-                            html.Hr(),
+                                    html.Hr(className="mb-0"),
+                                ]
+                            )
                         ]
-                    )
-                ]
+                    ),
+                ],
+                id="navbar-container",
+                className="navbar-fixed",
             ),
             dbc.Row(
                 [
@@ -2936,6 +3099,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             Output("theme-store", "data"),
             Output("theme-mode-store", "data"),
             Output("theme-dropdown-label", "children"),
+            Output("theme-dropdown-label", "style"),
             Output("theme-opt-light", "className"),
             Output("theme-opt-dark", "className"),
             Output("theme-opt-auto", "className"),
@@ -2945,17 +3109,20 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             Input("theme-opt-dark", "n_clicks"),
             Input("theme-opt-auto", "n_clicks"),
             Input("theme-interval", "n_intervals"),
+            Input("page-load", "data"),
         ],
         [
             State("theme-store", "data"),
             State("theme-mode-store", "data"),
         ],
     )
-    def update_theme(_n_light, _n_dark, _n_auto, _n_interval, theme, theme_mode):
+    def update_theme(
+        _n_light, _n_dark, _n_auto, _n_interval, _page_load, theme, theme_mode
+    ):
         from dash import ctx
 
         theme = theme or "light"
-        theme_mode = theme_mode or "light"
+        theme_mode = theme_mode or "auto"
         triggered = getattr(ctx, "triggered_id", None)
 
         if triggered == "theme-opt-light":
@@ -2968,16 +3135,50 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
             theme_mode = "auto"
             hour = datetime.now().hour
             theme = "dark" if hour < 6 or hour >= 18 else "light"
+        elif triggered == "page-load.data" and theme_mode == "auto":
+            hour = datetime.now().hour
+            theme = "dark" if hour < 6 or hour >= 18 else "light"
         elif triggered == "theme-interval" and theme_mode == "auto":
             hour = datetime.now().hour
             theme = "dark" if hour < 6 or hour >= 18 else "light"
 
         if theme_mode == "light":
-            label_icon = "⊙"
+            icon_bg = "#ffffff"
+            icon_inner_bg = "#0969da"
+            icon_border = "#d0d7de"
         elif theme_mode == "dark":
-            label_icon = "◑"
+            icon_bg = "#24292f"
+            icon_inner_bg = "#0969da"
+            icon_border = "#24292f"
         else:
-            label_icon = "◐"
+            icon_bg = "#ffffff"
+            icon_inner_bg = "linear-gradient(to right, #0969da 50%, #ffffff 50%)"
+            icon_border = "#d0d7de"
+
+        label_icon = html.Div(
+            id="theme-icon-inner",
+            style={
+                "width": "20px",
+                "height": "20px",
+                "borderRadius": "50%",
+                "background": icon_inner_bg,
+                "border": f"1px solid {icon_border}",
+            },
+        )
+
+        label_style = {
+            "display": "inline-flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "width": "30px",
+            "height": "30px",
+            "borderRadius": "50%",
+            "backgroundColor": icon_bg,
+            "border": f"1px solid {icon_border}",
+            "cursor": "pointer",
+            "userSelect": "none",
+            "flexShrink": "0",
+        }
 
         active = "dropdown-item active"
         inactive = "dropdown-item"
@@ -2985,7 +3186,7 @@ def create_dash_app(visualizer: InteractiveNetworkVisualizer):
         cl_dark = active if theme_mode == "dark" else inactive
         cl_auto = active if theme_mode == "auto" else inactive
 
-        return theme, theme_mode, label_icon, cl_light, cl_dark, cl_auto
+        return theme, theme_mode, label_icon, label_style, cl_light, cl_dark, cl_auto
 
     app.clientside_callback(
         """
