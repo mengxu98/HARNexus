@@ -130,7 +130,6 @@ color_sets <- attr(thisplot::chinese_colors, "color_sets", exact = TRUE)
 
 colors32 <- color_sets$ChineseSet32
 colors128 <- color_sets$ChineseSet128
-colors2 <- c("gray80", "#15559A")
 
 color_methods <- c(
   "GENIE3" = "#2177B8",

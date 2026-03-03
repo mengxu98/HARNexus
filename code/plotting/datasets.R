@@ -151,7 +151,7 @@ p4 <- DotPlot(
   objects_plot,
   features = marker_genes,
   group.by = "seurat_clusters",
-  cols = colors2,
+  cols = c("gray80", "#15559A"),
   dot.scale = 5
 ) +
   theme_bw() +
