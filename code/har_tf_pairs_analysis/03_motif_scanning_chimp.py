@@ -7,7 +7,7 @@ import pandas as pd
 import re
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 # memelite: https://github.com/jmschrei/memesuite-lite
 from memelite import fimo

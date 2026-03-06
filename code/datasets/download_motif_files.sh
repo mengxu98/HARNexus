@@ -16,7 +16,7 @@ MOTIF_DIR="${DATA_DIR}/motifs"
 
 mkdir -p "$GENOME_DIR" "$MOTIF_DIR"
 
-log_success "[1/6] Created directories:"
+log_message "[1/6] Created directories:" --message-type success
 log_message "   ${CYAN}${GENOME_DIR}${NC}"
 log_message "   ${CYAN}${MOTIF_DIR}${NC}"
 
@@ -25,7 +25,7 @@ cd "$GENOME_DIR"
 
 # Check if final processed file already exists
 if [ -f "GRCh38.fa" ]; then
-    log_success "[2/6] GRCh38.fa already exists, skipping download and processing"
+    log_message "[2/6] GRCh38.fa already exists, skipping download and processing" --message-type success
 else
     log_message "[2/6] Downloading GRCh38 (UCSC version, with chr prefix)..."
 
@@ -43,7 +43,7 @@ http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz|GRCh38.fa.gz|0
         gunzip -f GRCh38.fa.gz
         if [ -f "hg38.fa" ]; then
             mv hg38.fa GRCh38.fa
-            log_success "Renamed hg38.fa to GRCh38.fa"
+            log_message "Renamed hg38.fa to GRCh38.fa" --message-type success
         fi
     fi
 fi
@@ -53,9 +53,9 @@ if [ ! -f "GRCh38.fa.fai" ]; then
   log_message "[3/6] Indexing GRCh38.fa ..."
   if command -v samtools &> /dev/null; then
     samtools faidx GRCh38.fa
-    log_success "Genome index created: GRCh38.fa.fai"
+    log_message "Genome index created: GRCh38.fa.fai" --message-type success
   else
-    log_warning "samtools not found. Please install samtools to create genome index."
+    log_message "samtools not found. Please install samtools to create genome index." --message-type warning
     log_message "You can install it with: conda install -c bioconda samtools"
     log_message "Or: brew install samtools"
   fi
@@ -72,7 +72,7 @@ File: GRCh38.fa
 Index: GRCh38.fa.fai
 EOF
 
-log_success "Genome ready: $(ls -lh GRCh38.fa)"
+log_message "Genome ready: $(ls -lh GRCh38.fa)" --message-type success
 
 # ----------- 3. Download standard TF motif databases -----------
 cd "$MOTIF_DIR"
@@ -99,7 +99,7 @@ if [ "$jaspar_exists" = false ]; then
     MOTIF_DOWNLOAD_LIST="${MOTIF_DOWNLOAD_LIST}
 https://jaspar.elixir.no/download/data/2024/CORE/JASPAR2024_CORE_vertebrates_non-redundant_pfms_meme.txt|JASPAR2024_CORE_vertebrates.meme|0"
 else
-    log_success "[4/6] JASPAR motif database already exists, skipping download"
+    log_message "[4/6] JASPAR motif database already exists, skipping download" --message-type success
 fi
 
 if [ "$hocomoco_exists" = false ]; then
@@ -107,7 +107,7 @@ if [ "$hocomoco_exists" = false ]; then
     MOTIF_DOWNLOAD_LIST="${MOTIF_DOWNLOAD_LIST}
 https://hocomoco11.autosome.ru/final_bundle/hocomoco11/core/HUMAN/mono/HOCOMOCOv11_core_HUMAN_mono_meme_format.meme|HOCOMOCOv11_core_mono_meme_format.meme|0"
 else
-    log_success "[4/6] HOCOMOCO motif database already exists, skipping download"
+    log_message "[4/6] HOCOMOCO motif database already exists, skipping download" --message-type success
 fi
 
 # Download motif files (continue even if some fail)
@@ -115,12 +115,12 @@ if [ -n "$MOTIF_DOWNLOAD_LIST" ]; then
     log_message "[4/6] Downloading missing motif databases..."
     batch_download "$MOTIF_DOWNLOAD_LIST" "$MOTIF_DIR" 3 || true
 else
-    log_success "[4/6] All motif databases already exist, skipping download"
+    log_message "[4/6] All motif databases already exist, skipping download" --message-type success
 fi
 
 # If JASPAR download failed and no processed file exists, provide manual download instructions
 if [ ! -f "JASPAR2024_CORE_vertebrates.meme" ] && [ ! -f "JASPAR2022_CORE_vertebrates.meme" ] && [ ! -f "JASPAR2020_CORE_vertebrates.meme" ] && [ ! -f "JASPAR_CORE_vertebrates.meme" ]; then
-    log_warning "JASPAR download failed. Please download manually:"
+    log_message "JASPAR download failed. Please download manually:" --message-type warning
     log_message "1. Visit: https://jaspar.elixir.no/downloads/"
     log_message "2. Select 'Vertebrates' → 'Single batch file (txt)' → 'PFMs (non-redundant)' → 'MEME'"
     log_message "3. Save as: ${MOTIF_DIR}/JASPAR2024_CORE_vertebrates.meme"
@@ -131,15 +131,15 @@ fi
 if [ -f "JASPAR2024_CORE_vertebrates.meme.gz" ]; then
     log_message "Extracting JASPAR2024_CORE_vertebrates.meme.gz..."
     gunzip -f JASPAR2024_CORE_vertebrates.meme.gz
-    log_success "JASPAR 2024 motifs extracted"
+    log_message "JASPAR 2024 motifs extracted" --message-type success
 elif [ -f "JASPAR2022_CORE_vertebrates.meme.gz" ]; then
     log_message "Extracting JASPAR2022_CORE_vertebrates.meme.gz..."
     gunzip -f JASPAR2022_CORE_vertebrates.meme.gz
-    log_success "JASPAR 2022 motifs extracted"
+    log_message "JASPAR 2022 motifs extracted" --message-type success
 elif [ -f "JASPAR2020_CORE_vertebrates.meme.gz" ]; then
     log_message "Extracting JASPAR2020_CORE_vertebrates.meme.gz..."
     gunzip -f JASPAR2020_CORE_vertebrates.meme.gz
-    log_success "JASPAR 2020 motifs extracted"
+    log_message "JASPAR 2020 motifs extracted" --message-type success
 fi
 
 # ----------- 4. Download AnimalTFDB TFBS prediction files -----------
@@ -152,7 +152,7 @@ download_animaltfdb_file() {
     local description="$3"
     
     if [ -f "$filename" ] && [ -s "$filename" ]; then
-        log_success "$description already exists"
+        log_message "$description already exists" --message-type success
         return 0
     fi
     
@@ -175,10 +175,10 @@ download_animaltfdb_file() {
         -o "$filename" "$url" 2>/dev/null; then
         
         if [ -s "$filename" ]; then
-            log_success "Successfully downloaded $description using curl"
+            log_message "Successfully downloaded $description using curl" --message-type success
             return 0
         else
-            log_warning "Downloaded file is empty, removing..."
+            log_message "Downloaded file is empty, removing..." --message-type warning
             rm -f "$filename"
         fi
     fi
@@ -201,10 +201,10 @@ download_animaltfdb_file() {
             -O "$filename" "$url" 2>/dev/null; then
             
             if [ -s "$filename" ]; then
-                log_success "Successfully downloaded $description using wget"
+                log_message "Successfully downloaded $description using wget" --message-type success
                 return 0
             else
-                log_warning "Downloaded file is empty, removing..."
+                log_message "Downloaded file is empty, removing..." --message-type warning
                 rm -f "$filename"
             fi
         fi
@@ -226,7 +226,7 @@ download_animaltfdb_file() {
     if curl -L -s "$final_url" -o "$temp_file" 2>/dev/null; then
         if [ -s "$temp_file" ]; then
             mv "$temp_file" "$filename"
-            log_success "Successfully downloaded $description using direct content method"
+            log_message "Successfully downloaded $description using direct content method" --message-type success
             return 0
         else
             rm -f "$temp_file"
@@ -243,14 +243,14 @@ download_animaltfdb_file() {
         -o "$filename" "$url" 2>/dev/null; then
         
         if [ -s "$filename" ]; then
-            log_success "Successfully downloaded $description using compressed curl"
+            log_message "Successfully downloaded $description using compressed curl" --message-type success
             return 0
         else
             rm -f "$filename"
         fi
     fi
     
-    log_error "Failed to download $description after trying multiple methods"
+    log_message "Failed to download $description after trying multiple methods" --message-type error || true
     log_message "Please try downloading manually:"
     log_message "1. Open: $url"
     log_message "2. Copy the content"
@@ -283,7 +283,7 @@ download_animaltfdb_file \
 log_message "[6/6] Creating combined motif file..."
 
 if [ -f "combined_motifs.meme" ]; then
-    log_success "combined_motifs.meme already exists, skipping creation"
+    log_message "combined_motifs.meme already exists, skipping creation" --message-type success
 else
     log_message "Creating combined_motifs.meme from available motif files..."
     
@@ -316,7 +316,7 @@ EOF
         tail -n +$(grep -n "^MOTIF" HOCOMOCOv11_core_mono_meme_format.meme | head -1 | cut -d: -f1) HOCOMOCOv11_core_mono_meme_format.meme >> combined_motifs.meme
     fi
 
-    log_success "Created combined_motifs.meme"
+    log_message "Created combined_motifs.meme" --message-type success
 fi
 
 # ----------- 6. Create documentation -----------
@@ -350,7 +350,7 @@ Sources:
 Date: $(date)
 EOF
 
-log_success "Motif databases ready:"
+log_message "Motif databases ready:" --message-type success
 log_message "Standard motif files:"
 ls -lh *.meme 2>/dev/null | grep -E "(JASPAR|HOCOMOCO|combined)" || true
 log_message "AnimalTFDB motif files:"
@@ -360,7 +360,7 @@ ls -lh *.annotation 2>/dev/null || true
 
 log_message ""
 log_message "=============================="
-log_success "✅ Environment setup completed."
+log_message "✅ Environment setup completed." --message-type success
 log_message "Genome:     ${CYAN}${GENOME_DIR}/GRCh38.fa${NC}"
 log_message "Standard Motifs: ${CYAN}${MOTIF_DIR}/JASPAR2024_CORE_vertebrates.meme${NC}, ${CYAN}HOCOMOCOv11_core_mono_meme_format.meme${NC}"
 log_message "AnimalTFDB Motifs: ${CYAN}${MOTIF_DIR}/fourdatabase_all.meme${NC}, ${CYAN}hTFtarget_prediction.motifs_matrix.meme${NC}"

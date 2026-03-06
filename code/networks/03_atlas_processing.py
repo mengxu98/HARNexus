@@ -18,7 +18,7 @@ import pandas as pd
 import re
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 HAR_TF_PAIRS_FILE = "results/har_tf/human/har_tf_pairs_scores.csv"
 NETWORK_CSV_DIR = "results/networks/har_csn_atlas/csv"

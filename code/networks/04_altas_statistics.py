@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 
 def check_dir(path: str) -> str:

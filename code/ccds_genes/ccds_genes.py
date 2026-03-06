@@ -10,7 +10,7 @@ import sys
 import csv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 data_dir = "data/ccds_genes"
 os.makedirs(data_dir, exist_ok=True)

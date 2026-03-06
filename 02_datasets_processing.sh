@@ -65,7 +65,7 @@ fi
 # if should_process "../../data/BrainData/processed/GSE126836/GSE126836_processed.rds"; then
 #   log_message "Processing GSE126836 data..."
 #   Rscript $code_dir/GSE126836.R
-#   log_success "GSE126836 data processed successfully!"
+#   log_message "GSE126836 data processed successfully!" --message-type success
 # else
 #   log_message "GSE126836 data already processed!"
 # fi

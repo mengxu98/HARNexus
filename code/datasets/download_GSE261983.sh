@@ -38,7 +38,7 @@ if [ -f "$TAR_FILE" ] && [ "$SAMPLE_DIRS_EXIST" -eq 0 ]; then
 			mv "$file" "$dir/$new_base"
 		fi
 	done
-	log_success "Archive extracted and files renamed"
+	log_message "Archive extracted and files renamed" --message-type success
 elif [ "$SAMPLE_DIRS_EXIST" -gt 0 ]; then
 	log_message "Archive already extracted (sample directories exist), skipping tar extraction."
 else
@@ -90,7 +90,7 @@ if [ "$GZ_FILES_IN_ROOT" -gt 0 ] && [ "$GZ_FILES_IN_SUBDIRS" -eq 0 ]; then
 	
 	# Count processed directories
 	PROCESSED_DIRS=$(find . -maxdepth 1 -type d -name "GSM*_*_RNA" 2>/dev/null | wc -l | tr -d ' ')
-	log_success "Files organized by sample ID and renamed to 10X standard names (organized $PROCESSED_DIRS sample directories)"
+	log_message "Files organized by sample ID and renamed to 10X standard names (organized $PROCESSED_DIRS sample directories)" --message-type success
 elif [ "$GZ_FILES_IN_SUBDIRS" -gt 0 ]; then
 	log_message "Files already organized (found .gz files in subdirectories), skipping organization step."
 else
@@ -101,4 +101,4 @@ cd "$ORIGINAL_DIR"
 
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE261983 data download and organization completed!"
+log_message "GSE261983 data download and organization completed!" --message-type success

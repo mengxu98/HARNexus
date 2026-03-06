@@ -70,7 +70,7 @@ if [ ! -f "$DATA_DIR/.GSE217511_extracted" ]; then
     
     # Create a marker so we don't re-extract next runs
     touch "$DATA_DIR/.GSE217511_extracted"
-    log_success "Files organized by GSM ID"
+    log_message "Files organized by GSM ID" --message-type success
 else
     log_message "Archive already extracted (marker exists), skipping tar extraction."
 fi
@@ -92,4 +92,4 @@ done
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE217511 data download and organization completed!"
+log_message "GSE217511 data download and organization completed!" --message-type success

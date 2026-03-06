@@ -29,7 +29,7 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 # Public API for programmatic use
 __all__ = [

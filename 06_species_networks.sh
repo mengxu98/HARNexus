@@ -7,7 +7,7 @@ source "code/functions/utils.sh"
 log_message "Checking required commands..."
 check_command Rscript
 check_command python3
-log_success "All required commands are installed"
+log_message "All required commands are installed" --message-type success
 
 if [ ! -f "../../data/BrainData/processed/GSE192774/GSE192774_processed.rds" ]; then
   log_message "Start processing GSE192774 data..."
@@ -29,4 +29,4 @@ run_r_script "code/species_networks" "06_atac_peak2gene.R" "Peak-to-gene associa
 log_message "Stage 3: Evolution Analysis"
 run_python_script "code/species_networks" "07_daccre_evolution.py" "DAcCRE-based evolution analysis"
 
-log_success "All analysis completed!"
+log_message "All analysis completed!" --message-type success

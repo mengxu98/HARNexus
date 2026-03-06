@@ -34,4 +34,4 @@ batch_download "$DOWNLOAD_LIST" "$DATA_DIR" 5
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "ROSMAP RDS data download completed!"
+log_message "ROSMAP RDS data download completed!" --message-type success

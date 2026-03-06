@@ -48,4 +48,4 @@ done
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE204863 data download and organization completed!"
+log_message "GSE204863 data download and organization completed!" --message-type success

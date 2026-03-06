@@ -37,7 +37,7 @@ while IFS='|' read -r url filename expected_size; do
     
     file_path="$DATA_DIR/$filename"
     if [ ! -f "$file_path" ]; then
-        log_error "File ${RED}$filename${NC} not found after download"
+        log_message "File ${RED}$filename${NC} not found after download" --message-type error || true
         verification_failed=$((verification_failed + 1))
         continue
     fi
@@ -48,11 +48,11 @@ while IFS='|' read -r url filename expected_size; do
 done <<< "$DOWNLOAD_LIST"
 
 if [ $verification_failed -gt 0 ]; then
-    log_error "File verification failed for ${RED}$verification_failed${NC} file(s)"
+    log_message "File verification failed for ${RED}$verification_failed${NC} file(s)" --message-type error || true
     exit 1
 fi
 
-log_success "All files verified successfully!"
+log_message "All files verified successfully!" --message-type success
 
 # Extract zip files (idempotent)
 extract_zip_file() {
@@ -61,7 +61,7 @@ extract_zip_file() {
     local marker_file="$3"
     
     if [ ! -f "$zip_file" ]; then
-        log_warning "Zip file ${YELLOW}$(basename "$zip_file")${NC} not found, skipping extraction"
+        log_message "Zip file ${YELLOW}$(basename " --message-type warning$zip_file")${NC} not found, skipping extraction"
         return 1
     fi
     
@@ -73,10 +73,10 @@ extract_zip_file() {
     log_message "Extracting ${WHITE}$(basename "$zip_file")${NC}..."
     if unzip -q -o "$zip_file" -d "$extract_dir" 2>/dev/null || unzip -o "$zip_file" -d "$extract_dir"; then
         touch "$marker_file"
-        log_success "Successfully extracted ${GREEN}$(basename "$zip_file")${NC}"
+        log_message "Successfully extracted ${GREEN}$(basename " --message-type success$zip_file")${NC}"
         return 0
     else
-        log_error "Failed to extract ${RED}$(basename "$zip_file")${NC}"
+        log_message "Failed to extract ${RED}$(basename " --message-type error || true$zip_file")${NC}"
         return 1
     fi
 }
@@ -115,7 +115,7 @@ while IFS='|' read -r url filename expected_size; do
                 file_count=$(find "$DATA_DIR/$extracted_dir" -type f | wc -l | tr -d ' ')
                 log_message "Extracted ${GREEN}$extracted_dir${NC} contains ${CYAN}$file_count${NC} files"
             else
-                log_warning "Extracted directory ${YELLOW}$extracted_dir${NC} is empty or missing"
+                log_message "Extracted directory ${YELLOW}$extracted_dir${NC} is empty or missing" --message-type warning
             fi
         fi
     fi
@@ -128,4 +128,4 @@ fi
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "BrainSTEM data download and verification completed!"
+log_message "BrainSTEM data download and verification completed!" --message-type success

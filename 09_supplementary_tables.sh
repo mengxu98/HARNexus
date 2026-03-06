@@ -17,5 +17,5 @@ check_command python3
 
 run_python_script "$code_dir" "prepare_supplementary_tables.py" "Supplementary tables"
 
-log_success "Supplementary tables completed!"
+log_message "Supplementary tables completed!" --message-type success
 echo ""

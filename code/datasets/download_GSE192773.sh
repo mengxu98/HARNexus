@@ -38,7 +38,7 @@ decompress_gz_file() {
     
     # Check if compressed file exists
     if [ ! -f "$gz_file" ]; then
-        log_warning "Compressed file ${YELLOW}$(basename "$gz_file")${NC} not found, skipping decompression"
+        log_message "Compressed file ${YELLOW}$(basename " --message-type warning$gz_file")${NC} not found, skipping decompression"
         return 1
     fi
     
@@ -53,10 +53,10 @@ decompress_gz_file() {
     if gunzip -c "$gz_file" > "$decompressed_file"; then
         local size=$(stat -f%z "$decompressed_file" 2>/dev/null || echo "0")
         local size_mb=$((size / 1024 / 1024))
-        log_success "Successfully decompressed ${GREEN}$(basename "$decompressed_file")${NC} (${WHITE}${size_mb}MB${NC})"
+        log_message "Successfully decompressed ${GREEN}$(basename " --message-type success$decompressed_file")${NC} (${WHITE}${size_mb}MB${NC})"
         return 0
     else
-        log_error "Failed to decompress ${RED}$(basename "$gz_file")${NC}"
+        log_message "Failed to decompress ${RED}$(basename " --message-type error || true$gz_file")${NC}"
         return 1
     fi
 }
@@ -68,7 +68,7 @@ extract_compressed_file() {
     dir="$(dirname "$file")"
     
     if [ ! -f "$file" ]; then
-        log_warning "Compressed file ${YELLOW}$(basename "$file")${NC} not found, skipping extraction"
+        log_message "Compressed file ${YELLOW}$(basename " --message-type warning$file")${NC} not found, skipping extraction"
         return 1
     fi
     
@@ -76,30 +76,30 @@ extract_compressed_file() {
         *.tar.gz|*.tgz)
             log_message "Extracting ${WHITE}$(basename "$file")${NC}..."
             if tar -xzf "$file" -C "$dir" -k; then
-                log_success "Successfully extracted ${GREEN}$(basename "$file")${NC}"
+                log_message "Successfully extracted ${GREEN}$(basename " --message-type success$file")${NC}"
                 return 0
             else
-                log_error "Failed to extract ${RED}$(basename "$file")${NC}"
+                log_message "Failed to extract ${RED}$(basename " --message-type error || true$file")${NC}"
                 return 1
             fi
             ;;
         *.tar)
             log_message "Extracting ${WHITE}$(basename "$file")${NC}..."
             if tar -xf "$file" -C "$dir" -k; then
-                log_success "Successfully extracted ${GREEN}$(basename "$file")${NC}"
+                log_message "Successfully extracted ${GREEN}$(basename " --message-type success$file")${NC}"
                 return 0
             else
-                log_error "Failed to extract ${RED}$(basename "$file")${NC}"
+                log_message "Failed to extract ${RED}$(basename " --message-type error || true$file")${NC}"
                 return 1
             fi
             ;;
         *.zip)
             log_message "Extracting ${WHITE}$(basename "$file")${NC}..."
             if unzip -n -q "$file" -d "$dir"; then
-                log_success "Successfully extracted ${GREEN}$(basename "$file")${NC}"
+                log_message "Successfully extracted ${GREEN}$(basename " --message-type success$file")${NC}"
                 return 0
             else
-                log_error "Failed to extract ${RED}$(basename "$file")${NC}"
+                log_message "Failed to extract ${RED}$(basename " --message-type error || true$file")${NC}"
                 return 1
             fi
             ;;
@@ -138,4 +138,4 @@ log_message "Extraction completed: ${GREEN}$extracted_count${NC}/${CYAN}$compres
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE192773 data download and extraction completed!"
+log_message "GSE192773 data download and extraction completed!" --message-type success

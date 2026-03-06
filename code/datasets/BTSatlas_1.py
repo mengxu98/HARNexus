@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.utils import log_message
+from functions.log_message import log_message
 
 data_dir = "../../data/BrainData/raw/BTSatlas"
 res_dir = "../../data/BrainData/processed/BTSatlas/"

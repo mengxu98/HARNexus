@@ -57,5 +57,5 @@ run_r_script "$plotting_dir" "gse192774_atac_daccre_plots.R" "DAcCRE visualizati
 # Figure 6a-f, Supplementary figure 9a-d
 run_r_script "$plotting_dir" "pfc_astrocytes_analysis.R" "PFC astrocytes analysis visualization"
 
-log_success "All plotting scripts running completed!"
+log_message "All plotting scripts running completed!" --message-type success
 echo ""

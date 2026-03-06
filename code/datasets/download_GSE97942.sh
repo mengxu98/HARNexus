@@ -51,7 +51,7 @@ if [ ! -f "$DATA_DIR/.GSE97942_extracted" ]; then
     fi
     
     touch "$DATA_DIR/.GSE97942_extracted"
-    log_success "GSE97942 data extraction completed!"
+    log_message "GSE97942 data extraction completed!" --message-type success
 else
     log_message "Files already extracted (marker exists), skipping extraction."
 fi
@@ -59,4 +59,4 @@ fi
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE97942 data download and organization completed!"
+log_message "GSE97942 data download and organization completed!" --message-type success

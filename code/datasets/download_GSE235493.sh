@@ -102,4 +102,4 @@ fi
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE235493 data download and organization completed!"
+log_message "GSE235493 data download and organization completed!" --message-type success

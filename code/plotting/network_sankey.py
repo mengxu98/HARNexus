@@ -11,8 +11,8 @@ from functions.utils import (
     COLOR_CELLTYPES,
     COLOR_STAGES,
     DEFAULT_NODE_COLOR,
-    log_message,
 )
+from functions.log_message import log_message
 from functions.utils_network import load_network_data, load_har_tf_data, generate_colors
 
 

@@ -34,7 +34,7 @@ if [ ! -f "$DATA_DIR/.GSE81475_extracted" ]; then
     log_message "Extracting $DATA_DIR/GSE81475_Zika.GEO.humanBrain.singleCell.gene.RPKM.txt.gz to $DATA_DIR/RPKM.txt ..."
     gunzip -c "$DATA_DIR/GSE81475_Zika.GEO.humanBrain.singleCell.gene.RPKM.txt.gz" > "$DATA_DIR/RPKM.txt"
     touch "$DATA_DIR/.GSE81475_extracted"
-    log_success "GSE81475 data extraction completed!"
+    log_message "GSE81475 data extraction completed!" --message-type success
 else
     log_message "Archive already extracted (marker exists), skipping extraction."
 fi
@@ -42,4 +42,4 @@ fi
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE81475 data download completed!"
+log_message "GSE81475 data download completed!" --message-type success

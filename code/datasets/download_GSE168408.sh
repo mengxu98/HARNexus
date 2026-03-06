@@ -34,7 +34,7 @@ while IFS='|' read -r url filename expected_size; do
     
     file_path="$DATA_DIR/$filename"
     if [ ! -f "$file_path" ]; then
-        log_error "File ${RED}$filename${NC} not found after download"
+        log_message "File ${RED}$filename${NC} not found after download" --message-type error || true
         verification_failed=$((verification_failed + 1))
         continue
     fi
@@ -45,11 +45,11 @@ while IFS='|' read -r url filename expected_size; do
 done <<< "$DOWNLOAD_LIST"
 
 if [ $verification_failed -gt 0 ]; then
-    log_error "File verification failed for ${RED}$verification_failed${NC} file(s)"
+    log_message "File verification failed for ${RED}$verification_failed${NC} file(s)" --message-type error || true
     exit 1
 fi
 
-log_success "All files verified successfully!"
+log_message "All files verified successfully!" --message-type success
 
 # Extract archive files (idempotent)
 extract_archive_file() {
@@ -58,7 +58,7 @@ extract_archive_file() {
     local marker_file="$3"
     
     if [ ! -f "$archive_file" ]; then
-        log_warning "Archive file ${YELLOW}$(basename "$archive_file")${NC} not found, skipping extraction"
+        log_message "Archive file ${YELLOW}$(basename " --message-type warning$archive_file")${NC} not found, skipping extraction"
         return 1
     fi
     
@@ -72,23 +72,23 @@ extract_archive_file() {
     if [[ "$archive_file" == *.tar || "$archive_file" == *.tar.gz ]]; then
         if tar -xf "$archive_file" -C "$extract_dir" 2>/dev/null; then
             touch "$marker_file"
-            log_success "Successfully extracted ${GREEN}$(basename "$archive_file")${NC}"
+            log_message "Successfully extracted ${GREEN}$(basename " --message-type success$archive_file")${NC}"
             return 0
         else
-            log_error "Failed to extract ${RED}$(basename "$archive_file")${NC}"
+            log_message "Failed to extract ${RED}$(basename " --message-type error || true$archive_file")${NC}"
             return 1
         fi
     elif [[ "$archive_file" == *.zip ]]; then
         if unzip -q -o "$archive_file" -d "$extract_dir" 2>/dev/null || unzip -o "$archive_file" -d "$extract_dir"; then
             touch "$marker_file"
-            log_success "Successfully extracted ${GREEN}$(basename "$archive_file")${NC}"
+            log_message "Successfully extracted ${GREEN}$(basename " --message-type success$archive_file")${NC}"
             return 0
         else
-            log_error "Failed to extract ${RED}$(basename "$archive_file")${NC}"
+            log_message "Failed to extract ${RED}$(basename " --message-type error || true$archive_file")${NC}"
             return 1
         fi
     else
-        log_warning "Unsupported archive format: ${YELLOW}$(basename "$archive_file")${NC}"
+        log_message "Unsupported archive format: ${YELLOW}$(basename " --message-type warning$archive_file")${NC}"
         return 1
     fi
 }
@@ -124,7 +124,7 @@ while IFS='|' read -r url filename expected_size; do
                 successful_extractions=$((successful_extractions + 1))
                 log_message "Archive ${GREEN}$(basename "$filename")${NC} extracted, found ${CYAN}$file_count${NC} files"
             else
-                log_warning "No extracted content found for ${YELLOW}$(basename "$filename")${NC}"
+                log_message "No extracted content found for ${YELLOW}$(basename " --message-type warning$filename")${NC}"
             fi
         fi
     fi
@@ -137,4 +137,4 @@ fi
 # Clean up temporary files
 cleanup_temp_files "$DATA_DIR"
 
-log_success "GSE168408 data download and verification completed!"
+log_message "GSE168408 data download and verification completed!" --message-type success
