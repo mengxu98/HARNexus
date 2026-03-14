@@ -15,7 +15,7 @@ check_command Rscript
 log_message "Start processing transcription factors..."
 run_r_script "$code_dir" "00_tfs.R" "Transcription factors"
 
-if [ ! -f "../../data/BrainData/processed/GSE97942/GSE97942_cerebellum_processed.rds" ]; then
+if [ ! -f "../../data/BrainOmicsData/processed/GSE97942/GSE97942_cerebellum_processed.rds" ]; then
   log_message "Start processing GSE97942 cerebellum data..."
   run_r_script "$code_dir" "01_GSE97942_annotation.R" "GSE97942 cerebellum"
 else

@@ -162,7 +162,6 @@ def extract_pfc_targets(
                 celltype_stage_targets[cell_type][stage]
             )
 
-    # Save CSV file
     if csv_rows:
         csv_df = pd.DataFrame(csv_rows)
         csv_df.to_csv(output_csv, index=False)
@@ -172,17 +171,15 @@ def extract_pfc_targets(
     else:
         log_message("Warning: No data to save", message_type="warning")
 
-    # Save JSON file (for R to read)
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(result_dict, f, indent=2, ensure_ascii=False)
     log_message(f"Saved JSON file: {output_json}", message_type="success")
 
-    # Summary statistics
     total_targets = sum(
         len(targets) for ct_dict in result_dict.values() for targets in ct_dict.values()
     )
     log_message(
-        f"Total: {len(result_dict)} cell types, {total_targets:,} target gene records",
+        "Total: {.val {len(result_dict)}} cell types, {.val {total_targets:,} target gene records",
         message_type="success",
     )
 

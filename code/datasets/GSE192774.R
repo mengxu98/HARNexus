@@ -1,9 +1,9 @@
-source("code/functions/prepare_env.R")
+source("functions/prepare_env.R")
 
 log_message("Starting GSE192774 integration (Human and Chimpanzee only)...")
 
-data_dir <- "../../data/BrainData/raw"
-res_dir <- check_dir("../../data/BrainData/processed/GSE192774/")
+data_dir <- "../../data/BrainOmicsData/raw"
+res_dir <- check_dir("../../data/BrainOmicsData/processed/GSE192774/")
 
 gse192772_dir <- file.path(data_dir, "GSE192772")
 gse192772_files <- list(

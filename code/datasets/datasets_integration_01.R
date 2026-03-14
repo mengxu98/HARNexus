@@ -1,8 +1,8 @@
 source("code/functions/prepare_env.R")
 
-data_dir <- "../../data/BrainData/processed/"
+data_dir <- "../../data/BrainOmicsData/processed/"
 res_dir <- check_dir(
-  "../../data/BrainData/integration/"
+  "../../data/BrainOmicsData/integration/"
 )
 
 log_message("Start loading data...")

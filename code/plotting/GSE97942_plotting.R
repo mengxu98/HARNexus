@@ -2,7 +2,7 @@ source("code/functions/prepare_env.R")
 
 fig_dir <- check_dir("figures/gse97942")
 object <- readRDS(
-  "../../data/BrainData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
+  "../../data/BrainOmicsData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
 )
 celltype_levels <- sort(as.character(unique(object$CellType)))
 object$Celltype <- factor(

@@ -9,11 +9,11 @@ check_command Rscript
 check_command python3
 log_message "All required commands are installed" --message-type success
 
-if [ ! -f "../../data/BrainData/processed/GSE192774/GSE192774_processed.rds" ]; then
+if [ ! -f "../../data/BrainOmicsData/processed/GSE192774/GSE192774_processed.rds" ]; then
   log_message "Start processing GSE192774 data..."
   run_r_script "code/datasets" "GSE192774.R" "GSE192774 data"
 else
-  log_message "GSE192774 data already processed!"
+  log_message "GSE192774 data already processed!" --message-type success
 fi
 
 log_message "Stage 1: Network Construction and Comparison"

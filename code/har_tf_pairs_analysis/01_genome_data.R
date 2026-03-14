@@ -35,7 +35,8 @@ gr_human <- GRanges(
     start = har_human$start, end = har_human$end
   )
 )
-
+pak::pak("BSgenome.Hsapiens.UCSC.hg38")
+library(BSgenome.Hsapiens.UCSC.hg38)
 seq_human <- getSeq(BSgenome.Hsapiens.UCSC.hg38, gr_human)
 names(seq_human) <- har_human$har
 writeXStringSet(
@@ -50,6 +51,8 @@ gr_chimp <- GRanges(
     start = har_chimp$start, end = har_chimp$end
   )
 )
+pak::pak("BSgenome.Ptroglodytes.UCSC.panTro5")
+library(BSgenome.Ptroglodytes.UCSC.panTro5)
 seq_chimp <- getSeq(BSgenome.Ptroglodytes.UCSC.panTro5, gr_chimp)
 names(seq_chimp) <- har_chimp$har
 writeXStringSet(

@@ -20,7 +20,7 @@ for (pair in sample_pairs) {
   )
   if (!file.exists(atac_file_sub)) {
     objects_atac <- readRDS(
-      "../../data/BrainData/processed/GSE192774/GSE192774_ATAC_processed.rds"
+      "../../data/BrainOmicsData/processed/GSE192774/GSE192774_ATAC_processed.rds"
     )
     objects_atac_sub <- subset(
       objects_atac, Sample == human_sample | Sample == chimp_sample

@@ -8,7 +8,7 @@ fig_dir <- check_dir("figures/aucell/")
 intersection_results <- readRDS("results/hic/intersection_results.rds")
 
 object <- readRDS(
-  "../../data/BrainData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
+  "../../data/BrainOmicsData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
 )
 
 great_dataset <- read.csv("data/genome/science_HAR.csv")

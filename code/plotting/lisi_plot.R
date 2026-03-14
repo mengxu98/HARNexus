@@ -1,6 +1,6 @@
 source("code/functions/prepare_env.R")
 
-data_dir <- "../../data/BrainData/integration/"
+data_dir <- "../../data/BrainOmicsData/integration/"
 res_dir <- check_dir("results/lisi")
 fig_dir <- check_dir("figures/lisi")
 

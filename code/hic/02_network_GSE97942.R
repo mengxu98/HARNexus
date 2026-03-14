@@ -6,7 +6,7 @@ res_dir <- check_dir("results/gse97942/")
 tfs_raw <- read.csv("results/har_tf/tfs.csv")[, 1]
 
 object <- readRDS(
-  "../../data/BrainData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
+  "../../data/BrainOmicsData/processed/GSE97942/GSE97942_cerebellum_processed.rds"
 )
 gene_sets_list <- get_celltype_specific_genes(object)
 

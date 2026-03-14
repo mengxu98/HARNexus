@@ -1,7 +1,7 @@
 library(Seurat)
 library(thisutils)
 
-data_dir <- "../../data/BrainData/integration/"
+data_dir <- "../../data/BrainOmicsData/integration/"
 
 objects_list_file <- file.path(data_dir, "objects_list_processed.rds")
 if (!file.exists(objects_list_file)) {

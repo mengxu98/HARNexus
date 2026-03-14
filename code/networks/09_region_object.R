@@ -27,7 +27,7 @@ load_network_data <- function(network_file, celltypes = NULL, verbose = TRUE) {
 build_region_object <- function(
     brain_region,
     data_dir = "results/networks/har_csn_data/",
-    integration_dir = "../../data/BrainData/integration",
+    integration_dir = "../../data/BrainOmicsData/integration",
     network_file = NULL,
     celltypes = NULL,
     use_cached = TRUE,

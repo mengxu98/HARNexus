@@ -43,6 +43,29 @@ for (pair in sample_pairs) {
         paste0("chimp_", chimp_sample, "_object.rds")
       )
     )
+    human_palette <- color_celltypes[unique(human_obj$CellType)]
+    chimp_palette <- color_celltypes[unique(chimp_obj$CellType)]
+
+    ht2 <- CellCorHeatmap(
+      srt_query = human_obj,
+      srt_ref = chimp_obj,
+      nlabel = 3,
+      label_cutoff = 0.6,
+      query_group = "CellType",
+      ref_group = "CellType",
+      ref_group_palcolor = human_palette,
+      query_group_palcolor = chimp_palette,
+      width = 2,
+      height = 2
+    )
+    pdf(
+      file.path(fig_dir, "cell_cor_heatmap.pdf"),
+      width = 8, height = 3
+    )
+    print(ht2$plot)
+    dev.off()
+
+
     human_obj$Species <- "Human"
     chimp_obj$Species <- "Chimpanzee"
     merged_obj <- merge(human_obj, y = chimp_obj)

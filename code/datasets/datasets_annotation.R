@@ -3,7 +3,7 @@ library(ggplot2)
 library(patchwork)
 library(thisutils)
 
-res_dir <- "../../data/BrainData/integration/"
+res_dir <- "../../data/BrainOmicsData/integration/"
 
 objects <- readRDS(file.path(res_dir, "objects_integrated.rds"))
 

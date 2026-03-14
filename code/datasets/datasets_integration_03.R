@@ -9,7 +9,7 @@ plan(sequential)
 dims <- 1:50
 n_features <- 3000
 
-res_dir <- "../../data/BrainData/integration/"
+res_dir <- "../../data/BrainOmicsData/integration/"
 
 objects_file <- file.path(
   res_dir, "objects_integrated.rds"

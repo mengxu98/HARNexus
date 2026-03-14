@@ -1,7 +1,7 @@
 source("code/functions/prepare_env.R")
 
-data_dir <- "../../data/BrainData/raw/GSE97942/"
-res_dir <- check_dir("../../data/BrainData/processed/GSE97942/")
+data_dir <- "../../data/BrainOmicsData/raw/GSE97942/"
+res_dir <- check_dir("../../data/BrainOmicsData/processed/GSE97942/")
 
 file_path <- file.path(res_dir, "GSE97942_cerebellum_processed.rds")
 if (!file.exists(file_path)) {

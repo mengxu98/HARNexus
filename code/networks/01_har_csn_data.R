@@ -1,7 +1,7 @@
 library(thisutils)
 library(Seurat)
 
-data_dir <- "../../data/BrainData/integration"
+data_dir <- "../../data/BrainOmicsData/integration"
 res_dir <- "results/networks/har_csn_data/"
 dir.create(res_dir, showWarnings = FALSE, recursive = TRUE)
 

@@ -39,7 +39,7 @@ for (pair in sample_pairs) {
   )
   if (!file.exists(file_human) || !file.exists(file_chimp)) {
     objects <- readRDS(
-      "../../data/BrainData/processed/GSE192774/GSE192774_processed.rds"
+      "../../data/BrainOmicsData/processed/GSE192774/GSE192774_processed.rds"
     )
 
     objects <- objects[, objects$Sample %in% c(human_sample, chimp_sample)]

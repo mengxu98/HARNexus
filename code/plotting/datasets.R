@@ -1,6 +1,6 @@
 source("code/functions/prepare_env.R")
 
-data_dir <- "../../data/BrainData/integration/"
+data_dir <- "../../data/BrainOmicsData/integration/"
 fig_dir <- check_dir("figures/datasets")
 
 objects_plot <- readRDS(

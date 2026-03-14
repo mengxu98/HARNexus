@@ -1,8 +1,6 @@
 packages <- c(
   "AUCell",
   "Biostrings",
-  "BSgenome.Hsapiens.UCSC.hg38",
-  "BSgenome.Ptroglodytes.UCSC.panTro5",
   "edgeR",
   "JASPAR2024",
   "Metrics",
