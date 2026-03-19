@@ -167,24 +167,38 @@ def load_sheet8():
     if not os.path.exists(p):
         return pd.DataFrame()
     required = ["Region", "Stage", "CellType", "TF", "Target"]
-    usecols = required
+    has_weight = True
+    usecols = required + ["Weight"]
     chunks = []
-    for chunk in pd.read_csv(p, usecols=usecols, chunksize=500_000):
+    for chunk in pd.read_csv(p, usecols=lambda c: c in usecols, chunksize=500_000):
         chunks.append(chunk)
     df = pd.concat(chunks, ignore_index=True)
     if not all(c in df.columns for c in required):
         return pd.DataFrame()
+    if "Weight" not in df.columns:
+        has_weight = False
 
     def agg_group(g):
         tfs = set(g["TF"])
-        targets_non_tf = g[~g["Target"].isin(tfs)]["Target"]
-        return pd.Series(
-            {
-                "Number of edges": len(g),
-                "Number of TFs": g["TF"].nunique(),
-                "Number of target genes": targets_non_tf.nunique(),
-            }
-        )
+        g_non_tf = g[~g["Target"].isin(tfs)]
+        targets_non_tf = g_non_tf["Target"]
+        result = {
+            "Number of edges": len(g),
+            "Number of TFs": g["TF"].nunique(),
+            "Number of target genes": targets_non_tf.nunique(),
+        }
+        if has_weight:
+            pos_mask = g["Weight"] > 0
+            neg_mask = g["Weight"] < 0
+            result["Number of positive edges"] = pos_mask.sum()
+            result["Number of negative edges"] = neg_mask.sum()
+            result["Number of positively regulated target genes"] = g.loc[
+                pos_mask & ~g["Target"].isin(tfs), "Target"
+            ].nunique()
+            result["Number of negatively regulated target genes"] = g.loc[
+                neg_mask & ~g["Target"].isin(tfs), "Target"
+            ].nunique()
+        return pd.Series(result)
 
     stats = (
         df.groupby(["Region", "Stage", "CellType"], dropna=False)
@@ -194,16 +208,24 @@ def load_sheet8():
     stats = stats.rename(
         columns={"Region": "Brain regions", "Stage": "Stages", "CellType": "Cell types"}
     )
-    return stats[
-        [
-            "Brain regions",
-            "Stages",
-            "Cell types",
-            "Number of edges",
-            "Number of TFs",
-            "Number of target genes",
-        ]
+    base_cols = [
+        "Brain regions",
+        "Stages",
+        "Cell types",
+        "Number of edges",
+        "Number of TFs",
+        "Number of target genes",
     ]
+    if has_weight:
+        base_cols.extend(
+            [
+                "Number of positive edges",
+                "Number of negative edges",
+                "Number of positively regulated target genes",
+                "Number of negatively regulated target genes",
+            ]
+        )
+    return stats[base_cols]
 
 
 def _load_species_networks(pair_id, human_prefix, chimp_prefix):

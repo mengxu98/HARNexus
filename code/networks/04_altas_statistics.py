@@ -42,7 +42,7 @@ def main():
         sys.exit(1)
 
     network_data = pd.read_csv(network_file)
-    required_cols = {"Region", "Stage", "CellType", "TF", "Target"}
+    required_cols = {"Region", "Stage", "CellType", "TF", "Target", "Weight"}
     missing = sorted(required_cols - set(network_data.columns))
     if missing:
         log_message(
@@ -81,13 +81,25 @@ def main():
     log_message(f"Unique Region×Stage×CellType: {n_region_stage_celltype:,}")
 
     log_message("Calculating network statistics...")
+
+    def compute_group_stats(group):
+        pos_mask = group["Weight"] > 0
+        neg_mask = group["Weight"] < 0
+        return pd.Series(
+            {
+                "Edges_count": len(group),
+                "Edges_pos_count": pos_mask.sum(),
+                "Edges_neg_count": neg_mask.sum(),
+                "TFs_count": group["TF"].nunique(),
+                "Genes_count": group["Target"].nunique(),
+                "Genes_pos_count": group.loc[pos_mask, "Target"].nunique(),
+                "Genes_neg_count": group.loc[neg_mask, "Target"].nunique(),
+            }
+        )
+
     stats = (
         network_data.groupby(["Region", "Stage", "CellType"], dropna=False)
-        .agg(
-            Edges_count=("Target", "size"),
-            TFs_count=("TF", pd.Series.nunique),
-            Genes_count=("Target", pd.Series.nunique),
-        )
+        .apply(compute_group_stats)
         .reset_index()
         .rename(columns={"CellType": "Cell_type"})
     )

@@ -33,6 +33,7 @@ packages <- c(
   "ggpointdensity",
   "ggpubr",
   "ggrepel",
+  "ggtext",
   "ggsignif",
   "ggVennDiagram",
   "ggwordcloud",
