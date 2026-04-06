@@ -53,7 +53,7 @@ def _format_column_name(name):
     result = " ".join([parts[0].capitalize()] + rest)
     if result == "Direction":
         return "Directions"
-    if "hi-c" in result.lower() and "validated target genes" in result.lower():
+    if "hi-c" in result.lower() and "support target genes" in result.lower():
         result = re.sub(r"\bhi-c\b", "Hi-C", result, flags=re.IGNORECASE)
     return result
 
@@ -114,7 +114,7 @@ def load_sheet3():
     if not os.path.exists(p):
         return pd.DataFrame()
     df = pd.read_csv(p)
-    sort_col = "Number of Hi-C-validated target genes"
+    sort_col = "Number of Hi-C-support target genes"
     df = df.rename(
         columns={
             "HAR": "HARs",
@@ -373,7 +373,7 @@ def main():
     loaders = [
         (1, "HAR_TF_motif", load_sheet1),
         (2, "TFs_binding_score", load_sheet2),
-        (3, "HiC_validated_target_genes", load_sheet3),
+        (3, "Target_genes_Hi-C_support", load_sheet3),
         (4, "GENIE3_astrocytes", load_sheet4),
         (5, "HARNexus_astrocytes", load_sheet5),
         (6, "LEAP_astrocytes", load_sheet6),
