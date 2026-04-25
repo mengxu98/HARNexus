@@ -20,7 +20,7 @@ XLSX_PATH = os.path.join(OUT_DIR, "Supplementary Tables.xlsx")
 FONT_NAME = "Times New Roman"
 HEADER_FILL = "D3D3D3"  # light gray
 
-_PRESERVE_WORDS_UPPER = {"TFS", "HARS", "HAR_ID", "HIC"}
+_PRESERVE_WORDS_UPPER = {"TFS", "HAR", "HARS", "HAR_ID", "HIC", "ID"}
 SINGULAR_TO_PLURAL = {"HAR": "HARs", "TF": "TFs", "Gene": "Genes", "Motif": "Motifs"}
 _SINGULAR_LOWER = {"har": "HARs", "tf": "TFs", "gene": "Genes", "motif": "Motifs"}
 _KEEP_AS_IS_UPPER = {"HARS", "HAR_ID", "TFS"}
@@ -183,20 +183,20 @@ def load_sheet8():
         g_non_tf = g[~g["Target"].isin(tfs)]
         targets_non_tf = g_non_tf["Target"]
         result = {
-            "Number of edges": len(g),
-            "Number of TFs": g["TF"].nunique(),
+            "Number of edges": len(g_non_tf),
+            "Number of TFs": g_non_tf["TF"].nunique(),
             "Number of target genes": targets_non_tf.nunique(),
         }
         if has_weight:
-            pos_mask = g["Weight"] > 0
-            neg_mask = g["Weight"] < 0
+            pos_mask = g_non_tf["Weight"] > 0
+            neg_mask = g_non_tf["Weight"] < 0
             result["Number of positive edges"] = pos_mask.sum()
             result["Number of negative edges"] = neg_mask.sum()
-            result["Number of positively regulated target genes"] = g.loc[
-                pos_mask & ~g["Target"].isin(tfs), "Target"
+            result["Number of positively regulated target genes"] = g_non_tf.loc[
+                pos_mask, "Target"
             ].nunique()
-            result["Number of negatively regulated target genes"] = g.loc[
-                neg_mask & ~g["Target"].isin(tfs), "Target"
+            result["Number of negatively regulated target genes"] = g_non_tf.loc[
+                neg_mask, "Target"
             ].nunique()
         return pd.Series(result)
 
@@ -226,6 +226,210 @@ def load_sheet8():
             ]
         )
     return stats[base_cols]
+
+
+def _stage_sort_key(stage):
+    if pd.isna(stage):
+        return (10**9, "")
+    text = str(stage)
+    m = re.match(r"^S(\d+)$", text)
+    if m:
+        return (int(m.group(1)), text)
+    return (10**9, text)
+
+
+def _collapse_unique(values):
+    out = []
+    seen = set()
+    for value in values:
+        if pd.isna(value):
+            continue
+        text = str(value).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+    return "; ".join(out)
+
+
+def _format_context(region, stage, celltype, source=None):
+    bits = [str(region).strip(), str(stage).strip(), str(celltype).strip()]
+    text = ", ".join([b for b in bits if b])
+    return text
+
+
+def _combine_contexts(primary, additional):
+    items = []
+    for value in (primary, additional):
+        if pd.isna(value):
+            continue
+        for part in str(value).split(";"):
+            text = part.strip()
+            if text and text not in items:
+                items.append(text)
+    return "; ".join(items)
+
+
+def load_sheet9():
+    path_nat = _path("results", "plac_support", "nature20_moesm4_gene_hits_detailed.csv")
+    path_broad = _path("results", "plac_support", "moesm4_broader_har_gene_hits.csv")
+    path_manifest = _path("results", "plac_support", "nature_case_manifest.csv")
+    if not os.path.exists(path_nat):
+        return pd.DataFrame()
+
+    df_nat = pd.read_csv(path_nat)
+    df_broad = pd.read_csv(path_broad) if os.path.exists(path_broad) else pd.DataFrame()
+    manifest = pd.read_csv(path_manifest) if os.path.exists(path_manifest) else pd.DataFrame()
+
+    neural_celltypes = {
+        "Radial glia",
+        "Neuroblasts",
+        "Excitatory neurons",
+        "Inhibitory neurons",
+    }
+    target_order = ["TENM3", "NPAS3", "AKAP6", "PLXNC1"]
+
+    frames = []
+    if not df_nat.empty:
+        nat = df_nat.copy()
+        nat["Source set"] = "Prioritized20"
+        nat["Atlas gene"] = nat["gene"]
+        nat["Atlas HAR"] = nat["nature_har_name"]
+        nat["Study note key"] = nat["gene"]
+        frames.append(
+            nat[
+                [
+                    "Source set",
+                    "Atlas gene",
+                    "Atlas HAR",
+                    "local_har_id",
+                    "best_region",
+                    "best_stage",
+                    "best_celltype",
+                    "max_abs_weight",
+                    "percentile_within_har_benchmark",
+                    "TFs",
+                    "Study note key",
+                ]
+            ]
+        )
+    if not df_broad.empty:
+        broad = df_broad.copy()
+        broad["Source set"] = "Broader"
+        broad["Atlas gene"] = broad["gene"]
+        broad["Atlas HAR"] = broad["local_har_id"]
+        broad["Study note key"] = broad["benchmark_gene"]
+        frames.append(
+            broad[
+                [
+                    "Source set",
+                    "Atlas gene",
+                    "Atlas HAR",
+                    "local_har_id",
+                    "best_region",
+                    "best_stage",
+                    "best_celltype",
+                    "max_abs_weight",
+                    "percentile_within_har_benchmark",
+                    "TFs",
+                    "Study note key",
+                ]
+            ]
+        )
+
+    if not frames:
+        return pd.DataFrame()
+
+    atlas = pd.concat(frames, ignore_index=True)
+    atlas = atlas[
+        atlas["Atlas gene"].isin(target_order)
+        & atlas["best_celltype"].isin(neural_celltypes)
+    ].copy()
+    if atlas.empty:
+        return pd.DataFrame()
+
+    atlas["max_abs_weight"] = pd.to_numeric(atlas["max_abs_weight"], errors="coerce")
+    atlas["percentile_within_har_benchmark"] = pd.to_numeric(
+        atlas["percentile_within_har_benchmark"], errors="coerce"
+    )
+
+    note_map = {}
+    if not manifest.empty and {"record_type", "nature_target_gene", "notes"}.issubset(
+        manifest.columns
+    ):
+        subset = manifest[
+            (manifest["record_type"] == "direct_case_pair")
+            & (manifest["nature_target_gene"].isin(target_order))
+        ]
+        note_map = (
+            subset.groupby("nature_target_gene")["notes"]
+            .apply(lambda x: _collapse_unique(x.tolist()))
+            .to_dict()
+        )
+
+    rows = []
+    for gene in target_order:
+        gene_df = atlas[atlas["Atlas gene"] == gene].copy()
+        if gene_df.empty:
+            continue
+        gene_df = gene_df.sort_values(
+            by=["Source set", "percentile_within_har_benchmark", "max_abs_weight"],
+            ascending=[True, True, False],
+            key=lambda col: col.map({"Prioritized20": 0, "Broader": 1})
+            if col.name == "Source set"
+            else col,
+        )
+        rep = gene_df.iloc[0]
+        contexts = []
+        seen_base_contexts = set()
+        for _, row in gene_df.iterrows():
+            base_context = _format_context(
+                row["best_region"], row["best_stage"], row["best_celltype"]
+            )
+            if base_context in seen_base_contexts:
+                continue
+            seen_base_contexts.add(base_context)
+            contexts.append(_format_context(base_context, "", "", row["Source set"]))
+        rep_context = _format_context(
+            rep["best_region"], rep["best_stage"], rep["best_celltype"]
+        )
+        additional_contexts = [
+            c for c in contexts if c != f"{rep_context} [{rep['Source set']}]"
+        ]
+        rows.append(
+            {
+                "Target genes": gene,
+                "Cui et al. functional support": note_map.get(gene, ""),
+                "Cui et al. supporting HARs": _collapse_unique(
+                    df_nat.loc[df_nat["gene"] == gene, "nature_har_name"].tolist()
+                ),
+                "HAR in atlas": rep["Atlas HAR"],
+                "TFs": rep["TFs"],
+                "Atlas contexts": _combine_contexts(
+                    rep_context, _collapse_unique(additional_contexts)
+                ),
+                "Network weight": rep["max_abs_weight"],
+            }
+        )
+
+    out = pd.DataFrame(rows)
+    out["__order"] = out["Target genes"].map(
+        {gene: idx for idx, gene in enumerate(target_order)}
+    )
+    out = out.sort_values("__order").drop(columns="__order").reset_index(drop=True)
+    out = out[
+        [
+            "Target genes",
+            "Cui et al. functional support",
+            "Cui et al. supporting HARs",
+            "HAR in atlas",
+            "Atlas contexts",
+            "TFs",
+            "Network weight",
+        ]
+    ]
+    out = out.fillna("")
+    return out
 
 
 def _load_species_networks(pair_id, human_prefix, chimp_prefix):
@@ -264,7 +468,7 @@ def _load_species_networks(pair_id, human_prefix, chimp_prefix):
     return out[cols]
 
 
-def load_sheet9():
+def load_sheet10():
     df1 = _load_species_networks("h3_c2", "human_h3_", "chimp_c2_")
     df2 = _load_species_networks("h4_c4", "human_h4_", "chimp_c4_")
     if df1.empty and df2.empty:
@@ -291,7 +495,7 @@ def _load_evolution_one(pair_id):
     return _rename_evolution_columns(pd.read_csv(p))
 
 
-def load_sheet10():
+def load_sheet11():
     df1 = _load_evolution_one("h3_c2")
     df2 = _load_evolution_one("h4_c4")
     if df1.empty and df2.empty:
@@ -330,7 +534,7 @@ def _rename_evolution_columns(df):
     return df.rename(columns={k: v for k, v in rename.items() if k in df.columns})
 
 
-def load_sheet11():
+def load_sheet12():
     p_t = _path("results", "pfc_astrocytes", "target_genes.csv")
     p_v = _path("results", "pfc_astrocytes", "var_genes.csv")
     target_col = "Target_genes"
@@ -357,7 +561,7 @@ def load_sheet11():
     return out
 
 
-def load_sheet12():
+def load_sheet13():
     p = _path("results", "pfc_astrocytes", "dynamic_heatmap_target_feature.csv")
     if not os.path.exists(p):
         return pd.DataFrame()
@@ -379,10 +583,11 @@ def main():
         (6, "LEAP_astrocytes", load_sheet6),
         (7, "PPCOR_astrocytes", load_sheet7),
         (8, "HAR_CSN_atlas_stats", load_sheet8),
-        (9, "Species_CSNs", load_sheet9),
-        (10, "Evolution_of_target_genes", load_sheet10),
-        (11, "Prefrontal_cortex_astrocytes", load_sheet11),
-        (12, "Dynamic_target_genes", load_sheet12),
+        (9, "Neuronal_HAR_targets", load_sheet9),
+        (10, "Species_CSNs", load_sheet10),
+        (11, "Evolution_of_target_genes", load_sheet11),
+        (12, "Prefrontal_cortex_astrocytes", load_sheet12),
+        (13, "Dynamic_target_genes", load_sheet13),
     ]
 
     table_info = pd.DataFrame(
@@ -423,7 +628,9 @@ def main():
     body_font = Font(name=FONT_NAME)
     gene_font = Font(name=FONT_NAME, italic=True)
     gene_col_names = (
+        "Genes",
         "TFs",
+        "Target genes",
         "Target genes",
         "HiC target genes",
         "Hic target genes",

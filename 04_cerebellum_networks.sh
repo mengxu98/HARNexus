@@ -12,8 +12,10 @@ fi
 
 check_command Rscript
 
-log_message "Start processing transcription factors..."
-run_r_script "$code_dir" "00_tfs.R" "Transcription factors"
+if [ ! -f "results/har_tf/tfs.csv" ]; then
+  log_message "'results/har_tf/tfs.csv' not found. Run '01_har_tf_pairs_analysis.sh' first." --message-type error || true
+  exit 1
+fi
 
 if [ ! -f "../../data/BrainOmicsData/processed/GSE97942/GSE97942_cerebellum_processed.rds" ]; then
   log_message "Start processing GSE97942 cerebellum data..."

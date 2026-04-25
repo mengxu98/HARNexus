@@ -8,8 +8,10 @@ code_dir="code/networks"
 
 check_command Rscript
 
-log_message "Start processing transcription factors..."
-run_r_script "code/hic" "00_tfs.R" "Transcription factors"
+if [ ! -f "results/har_tf/tfs.csv" ]; then
+  log_message "'results/har_tf/tfs.csv' not found. Run '01_har_tf_pairs_analysis.sh' first." --message-type error || true
+  exit 1
+fi
 
 log_message "Start processing all datasets data..."
 run_r_script "$code_dir" "01_har_csn_data.R" "All datasets data"

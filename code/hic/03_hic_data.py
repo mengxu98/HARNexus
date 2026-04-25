@@ -30,7 +30,7 @@ HAR_FILE = "data/genome/HARs_PMID40011774.csv"  # chr start end HAR_ID
 # https://data.4dnucleome.org/files-processed/4DNFIQWVV324/
 PAIRS_FILE = "data/hic/4DNFIQWVV324.pairs.gz"  # contact list-combined (pairs)
 
-PROMOTER_FLANK = 5000  # ±2 kb
+PROMOTER_FLANK = 5000  # ±5 kb
 OUT_FILE = "results/hic/HAR_gene_HiC_supported.csv"
 
 

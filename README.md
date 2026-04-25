@@ -14,7 +14,18 @@ Overall, HARNexus provides a practical and scalable way to study HAR function in
 
 ## Repository
 
-This repository contains analysis pipelines, and plotting code.
+This repository contains analysis pipelines and plotting code.
+
+### Data dependency
+
+The large processed sc/snRNA-seq and snATAC-seq objects are managed in the companion repository:
+https://github.com/mengxu98/BrainOmicsData
+
+The scripts expect that repository's processed outputs under `../../data/BrainOmicsData/` relative to this repository. Local input files for HAR annotations, motifs, Hi-C support, and selected gene sets are stored under `data/`.
+
+### Basic usage
+
+Run the numbered scripts from the repository root. The HAR-TF step should be run before network analyses because it creates `results/har_tf/tfs.csv`, which is reused by the cerebellum, atlas, and species workflows.
 
 1. `01_har_tf_pairs_analysis.sh`
 2. `02_datasets_processing.sh`
