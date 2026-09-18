@@ -1,9 +1,61 @@
 from __future__ import annotations
 
+import importlib.util
 import os
-from typing import Dict
+import subprocess
+import sys
+from pathlib import Path
+from typing import Dict, Optional
 
-from functions.log_message import log_message
+_log_cache: dict[str, object] = {}
+
+
+def _resolve_thisutils_log_message():
+    """Dynamically resolve and load log_message from thisutils."""
+    if "fn" in _log_cache:
+        return _log_cache["fn"]
+
+    explicit = os.environ.get("LOG_MESSAGE_PY")
+    if explicit and Path(explicit).is_file():
+        script_path = Path(explicit).resolve()
+    else:
+        script_path = None
+        try:
+            expr = (
+                'p <- system.file("scripts/log_message.py", package = "thisutils"); '
+                'if (!nzchar(p)) p <- system.file("python/log_message.py", package = "thisutils"); '
+                'cat(p)'
+            )
+            out = subprocess.run(
+                ["Rscript", "--vanilla", "-e", expr],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            candidate = out.stdout.strip()
+            if out.returncode == 0 and candidate and Path(candidate).is_file():
+                script_path = Path(candidate)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    if script_path and script_path.is_file():
+        spec = importlib.util.spec_from_file_location("_thisutils_logger", script_path)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _log_cache["fn"] = module.log_message
+            return module.log_message
+
+    def fallback(message, *args, **kwargs):
+        print(message, file=sys.stderr)
+
+    _log_cache["fn"] = fallback
+    return fallback
+
+
+def log_message(message, *args, **kwargs):
+    """Log a message using thisutils.log_message."""
+    return _resolve_thisutils_log_message()(message, *args, **kwargs)
 
 __all__ = [
     "log_message",

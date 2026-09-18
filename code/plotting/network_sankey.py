@@ -8,11 +8,11 @@ from tqdm import tqdm
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from functions.utils import (
+    log_message,
     COLOR_CELLTYPES,
     COLOR_STAGES,
     DEFAULT_NODE_COLOR,
 )
-from functions.log_message import log_message
 from functions.utils_network import load_network_data, load_har_tf_data, generate_colors
 
 

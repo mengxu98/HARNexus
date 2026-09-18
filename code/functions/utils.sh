@@ -5,9 +5,35 @@
 
 set -e
 
-# Reuse the new unified shell logger.
-UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$UTILS_DIR/log_message.sh"
+# Resolve and source log_message.sh directly from thisutils
+_harnexus_source_logger() {
+    if [ -n "${LOG_MESSAGE_SH:-}" ] && [ -f "${LOG_MESSAGE_SH}" ]; then
+        source "${LOG_MESSAGE_SH}"
+        return 0
+    fi
+    if command -v Rscript >/dev/null 2>&1; then
+        local resolved
+        resolved=$(Rscript --vanilla -e 'p <- system.file("scripts/log_message.sh", package = "thisutils"); if (!nzchar(p)) p <- system.file("python/log_message.sh", package = "thisutils"); cat(p)' 2>/dev/null)
+        if [ -n "$resolved" ] && [ -f "$resolved" ]; then
+            source "$resolved"
+            return 0
+        fi
+    fi
+    # Fallback to plain output when thisutils is unavailable
+    log_message() {
+        local args=()
+        while [ $# -gt 0 ]; do
+            case "$1" in
+                --message-type|--timestamp|--verbose|--cli-model|--indent|--color|--bg-color)
+                    shift 2 || shift ;;
+                *) args+=("$1"); shift ;;
+            esac
+        done
+        printf '%s\n' "${args[*]}" >&2
+    }
+}
+_harnexus_source_logger
+unset -f _harnexus_source_logger
 
 # Download function with resume capability and progress display
 download_with_resume() {

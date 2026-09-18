@@ -3,8 +3,7 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from functions.log_message import log_message
-from functions.utils import check_dir
+from functions.utils import log_message, check_dir
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
