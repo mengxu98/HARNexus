@@ -2,7 +2,9 @@
 
 ## Overview
 
-![HARNexus overview](code/overview.svg)
+<img src="code/overview.svg#gh-light-mode-only" alt="HARNexus overview"/>
+
+<img src="code/overview-dark.svg#gh-dark-mode-only" alt="HARNexus overview"/>
 
 HARNexus is an integrative framework for mapping the regulatory **nexus** between human accelerated regions (HARs) and downstream target genes at single-cell resolution.
 
